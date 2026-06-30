@@ -8,22 +8,24 @@
     "lint": "eslint .",
     "format": "prettier --check .",
     "format:write": "prettier --write .",
-    "sam:build": "sam build",
-    "sam:validate": "sam validate --lint"
+    "sam:build": "sam build --template template.yaml",
+    "sam:validate": "sam validate --lint --template template.yaml",
+    "seed:sample": "node --loader ts-node/esm src/scripts/seed-local-data/sampleArticles.ts"
   },
   "dependencies": {
     "@aws-sdk/client-dynamodb": "^3.1076.0",
-    "@aws-sdk/lib-dynamodb": "^3.1076.0"
+    "@aws-sdk/lib-dynamodb": "^3.1076.0",
+    "esbuild": "^0.28.1"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@types/aws-lambda": "^8.10.162",
     "@types/node": "^26.0.1",
-    "esbuild": "^0.28.1",
     "eslint": "^10.6.0",
     "eslint-config-prettier": "^10.1.8",
     "globals": "^17.7.0",
     "prettier": "^3.9.4",
+    "ts-node": "^10.9.2",
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.62.1"
   }

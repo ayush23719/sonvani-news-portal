@@ -8,4 +8,7 @@ region = "ap-south-1"
 capabilities = "CAPABILITY_IAM"
 confirm_changeset = true
 resolve_s3 = true
-parameter_overrides = "EnvironmentName=dev"
+parameter_overrides = "EnvironmentName=\"dev\" LogLevel=\"info\" AllowedCorsOrigin=\"*\""
+stack_name = "sonvani-backend-dev"
+s3_prefix = "sonvani-backend-dev"
+image_repositories = []

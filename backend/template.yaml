@@ -1,6 +1,26 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
-Description: Hindi News Portal backend foundation.
+Description: Sonvani Hindi News Portal backend foundation.
+
+Parameters:
+  EnvironmentName:
+    Type: String
+    Default: dev
+    AllowedValues:
+      - dev
+      - staging
+      - prod
+  LogLevel:
+    Type: String
+    Default: info
+    AllowedValues:
+      - debug
+      - info
+      - warn
+      - error
+  AllowedCorsOrigin:
+    Type: String
+    Default: '*'
 
 Globals:
   Function:
@@ -11,23 +31,40 @@ Globals:
     MemorySize: 256
     Environment:
       Variables:
+        ENVIRONMENT_NAME: !Ref EnvironmentName
+        LOG_LEVEL: !Ref LogLevel
         ARTICLES_TABLE_NAME: !Ref ArticlesTable
-
-Parameters:
-  EnvironmentName:
-    Type: String
-    Default: dev
-    AllowedValues:
-      - dev
-      - staging
-      - prod
+        MEDIA_BUCKET_NAME: !Ref MediaBucket
 
 Resources:
+  PublicApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: !Ref EnvironmentName
+      EndpointConfiguration: REGIONAL
+      TracingEnabled: true
+      Cors:
+        AllowMethods: "'GET,OPTIONS'"
+        AllowHeaders: "'Content-Type,Authorization,X-Requested-With'"
+        AllowOrigin: !Sub "'${AllowedCorsOrigin}'"
+        MaxAge: "'600'"
+      MethodSettings:
+        - ResourcePath: '/*'
+          HttpMethod: '*'
+          MetricsEnabled: true
+          ThrottlingBurstLimit: 200
+          ThrottlingRateLimit: 100
+
   ArticlesTable:
     Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
     Properties:
-      TableName: !Sub HindiNewsArticles-${EnvironmentName}
       BillingMode: PAY_PER_REQUEST
+      SSESpecification:
+        SSEEnabled: true
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
       AttributeDefinitions:
         - AttributeName: pk
           AttributeType: S
@@ -103,34 +140,293 @@ Resources:
               KeyType: RANGE
           Projection:
             ProjectionType: ALL
+      Tags:
+        - Key: Application
+          Value: sonvani
+        - Key: Environment
+          Value: !Ref EnvironmentName
 
   MediaBucket:
     Type: AWS::S3::Bucket
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
     Properties:
-      BucketName: !Sub hindi-news-portal-media-${EnvironmentName}-${AWS::AccountId}
+      VersioningConfiguration:
+        Status: Enabled
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
       PublicAccessBlockConfiguration:
         BlockPublicAcls: true
         BlockPublicPolicy: true
         IgnorePublicAcls: true
         RestrictPublicBuckets: true
+      CorsConfiguration:
+        CorsRules:
+          - AllowedMethods:
+              - GET
+              - HEAD
+            AllowedOrigins:
+              - !Ref AllowedCorsOrigin
+            AllowedHeaders:
+              - '*'
+            MaxAge: 3600
+      Tags:
+        - Key: Application
+          Value: sonvani
+        - Key: Environment
+          Value: !Ref EnvironmentName
 
-  FrontendBucket:
-    Type: AWS::S3::Bucket
+  PublicReadFunctionRole:
+    Type: AWS::IAM::Role
     Properties:
-      BucketName: !Sub hindi-news-portal-frontend-${EnvironmentName}-${AWS::AccountId}
-      PublicAccessBlockConfiguration:
-        BlockPublicAcls: true
-        BlockPublicPolicy: true
-        IgnorePublicAcls: true
-        RestrictPublicBuckets: true
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: sonvani-public-read-access
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Sid: ReadArticlesTable
+                Effect: Allow
+                Action:
+                  - dynamodb:GetItem
+                  - dynamodb:Query
+                  - dynamodb:Scan
+                Resource:
+                  - !GetAtt ArticlesTable.Arn
+                  - !Sub '${ArticlesTable.Arn}/index/*'
+              - Sid: ReadMediaObjects
+                Effect: Allow
+                Action:
+                  - s3:GetObject
+                Resource: !Sub '${MediaBucket.Arn}/*'
+
+  GetHomeFeedFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Role: !GetAtt PublicReadFunctionRole.Arn
+      Handler: src/functions/getHomeFeed/app.handler
+      CodeUri: .
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref PublicApi
+            Path: /api/v1/home
+            Method: GET
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        EntryPoints:
+          - src/functions/getHomeFeed/app.ts
+        Format: esm
+        Minify: true
+        Sourcemap: false
+        Target: es2022
+
+  GetArticleBySlugFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Role: !GetAtt PublicReadFunctionRole.Arn
+      Handler: src/functions/getArticleBySlug/app.handler
+      CodeUri: .
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref PublicApi
+            Path: /api/v1/articles/{slug}
+            Method: GET
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        EntryPoints:
+          - src/functions/getArticleBySlug/app.ts
+        Format: esm
+        Minify: true
+        Sourcemap: false
+        Target: es2022
+
+  GetArticlesByCategoryFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Role: !GetAtt PublicReadFunctionRole.Arn
+      Handler: src/functions/getArticlesByCategory/app.handler
+      CodeUri: .
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref PublicApi
+            Path: /api/v1/categories/{categorySlug}/articles
+            Method: GET
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        EntryPoints:
+          - src/functions/getArticlesByCategory/app.ts
+        Format: esm
+        Minify: true
+        Sourcemap: false
+        Target: es2022
+
+  GetArticlesByDistrictFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Role: !GetAtt PublicReadFunctionRole.Arn
+      Handler: src/functions/getArticlesByDistrict/app.handler
+      CodeUri: .
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref PublicApi
+            Path: /api/v1/districts/{districtSlug}/articles
+            Method: GET
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        EntryPoints:
+          - src/functions/getArticlesByDistrict/app.ts
+        Format: esm
+        Minify: true
+        Sourcemap: false
+        Target: es2022
+
+  GetArticlesByStateFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Role: !GetAtt PublicReadFunctionRole.Arn
+      Handler: src/functions/getArticlesByState/app.handler
+      CodeUri: .
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref PublicApi
+            Path: /api/v1/states/{stateSlug}/articles
+            Method: GET
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        EntryPoints:
+          - src/functions/getArticlesByState/app.ts
+        Format: esm
+        Minify: true
+        Sourcemap: false
+        Target: es2022
+
+  GetBreakingNewsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Role: !GetAtt PublicReadFunctionRole.Arn
+      Handler: src/functions/getBreakingNews/app.handler
+      CodeUri: .
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref PublicApi
+            Path: /api/v1/breaking-news
+            Method: GET
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        EntryPoints:
+          - src/functions/getBreakingNews/app.ts
+        Format: esm
+        Minify: true
+        Sourcemap: false
+        Target: es2022
+
+  GetFeaturedArticlesFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Role: !GetAtt PublicReadFunctionRole.Arn
+      Handler: src/functions/getFeaturedArticles/app.handler
+      CodeUri: .
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref PublicApi
+            Path: /api/v1/featured
+            Method: GET
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        EntryPoints:
+          - src/functions/getFeaturedArticles/app.ts
+        Format: esm
+        Minify: true
+        Sourcemap: false
+        Target: es2022
+
+  SearchArticlesFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Role: !GetAtt PublicReadFunctionRole.Arn
+      Handler: src/functions/searchArticles/app.handler
+      CodeUri: .
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref PublicApi
+            Path: /api/v1/search
+            Method: GET
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        EntryPoints:
+          - src/functions/searchArticles/app.ts
+        Format: esm
+        Minify: true
+        Sourcemap: false
+        Target: es2022
+
+  GetSitemapDataFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Role: !GetAtt PublicReadFunctionRole.Arn
+      Handler: src/functions/getSitemapData/app.handler
+      CodeUri: .
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref PublicApi
+            Path: /api/v1/sitemap/articles
+            Method: GET
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        EntryPoints:
+          - src/functions/getSitemapData/app.ts
+        Format: esm
+        Minify: true
+        Sourcemap: false
+        Target: es2022
 
 Outputs:
+  PublicApiUrl:
+    Description: Public API Gateway base URL.
+    Value: !Sub 'https://${PublicApi}.execute-api.${AWS::Region}.amazonaws.com/${EnvironmentName}/api/v1'
   ArticlesTableName:
     Description: DynamoDB articles table name.
     Value: !Ref ArticlesTable
   MediaBucketName:
     Description: S3 media bucket name.
     Value: !Ref MediaBucket
-  FrontendBucketName:
-    Description: S3 frontend bucket name.
-    Value: !Ref FrontendBucket
+  PublicReadFunctionRoleArn:
+    Description: IAM role used by public read Lambda functions.
+    Value: !GetAtt PublicReadFunctionRole.Arn
