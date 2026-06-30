@@ -1,0 +1,10 @@
+<svg width="224" height="72" viewBox="0 0 224 72" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">सोनवाणी</title>
+  <desc id="desc">सोनवाणी हिंदी समाचार पोर्टल का लोगो</desc>
+  <rect width="224" height="72" rx="8" fill="white"/>
+  <text x="10" y="39" fill="#07135F" font-family="Noto Sans Devanagari, Arial, sans-serif" font-size="34" font-weight="800">सोन</text>
+  <text x="79" y="39" fill="#E5252A" font-family="Noto Sans Devanagari, Arial, sans-serif" font-size="34" font-weight="800">वाणी</text>
+  <rect x="169" y="15" width="44" height="24" rx="5" fill="#E5252A"/>
+  <text x="181" y="32" fill="white" font-family="Arial, sans-serif" font-size="12" font-weight="700">LIVE</text>
+  <text x="12" y="58" fill="#5B6472" font-family="Noto Sans Devanagari, Arial, sans-serif" font-size="12" font-weight="600">सच की आवाज़, आपके शहर से</text>
+</svg>

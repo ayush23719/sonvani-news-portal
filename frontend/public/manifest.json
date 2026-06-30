@@ -1,0 +1,9 @@
+{
+  "name": "सोनवाणी",
+  "short_name": "सोनवाणी",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F6F7F9",
+  "theme_color": "#07135F",
+  "lang": "hi"
+}
