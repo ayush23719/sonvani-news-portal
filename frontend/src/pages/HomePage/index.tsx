@@ -1,4 +1,12 @@
-import { Box, Button, CircularProgress, Container, Paper, Stack, Typography } from '@mui/material'
+import {
+  Box,
+  Button,
+  CircularProgress,
+  Container,
+  Paper,
+  Stack,
+  Typography,
+} from '@mui/material'
 import { useQuery } from '@tanstack/react-query'
 import { BreakingNewsTicker } from '@/components/article/BreakingNewsTicker'
 import { AdvertisementSlot } from '@/components/common/AdvertisementSlot'
@@ -10,12 +18,12 @@ import { LatestNewsSection } from '@/components/home/LatestNewsSection'
 import { PhotoGallerySection } from '@/components/home/PhotoGallerySection'
 import { TopStoriesGrid } from '@/components/home/TopStoriesGrid'
 import { VideoNewsSection } from '@/components/home/VideoNewsSection'
-import { fetchHomePageData } from '@/services/homeFeedService'
+import { fetchHomePageData, type HomePageData } from '@/services/homeFeedService'
 
 export function HomePage() {
-  const { data, error, isLoading, refetch } = useQuery({
+  const { data, error, isLoading, refetch } = useQuery<HomePageData>({
     queryKey: ['home-feed'],
-    queryFn: ({ signal }) => fetchHomePageData(signal),
+    queryFn: () => fetchHomePageData(),
   })
 
   if (isLoading) {
@@ -29,28 +37,41 @@ export function HomePage() {
   return (
     <>
       <BreakingNewsTicker items={data.breakingNews} />
+
       <Container sx={{ py: { xs: 2.5, md: 4 } }}>
         <Box
           sx={{
             display: 'grid',
             gap: { xs: 3, lg: 3.5 },
-            gridTemplateColumns: { xs: '1fr', lg: 'minmax(0, 1fr) 340px' },
+            gridTemplateColumns: {
+              xs: '1fr',
+              lg: 'minmax(0, 1fr) 340px',
+            },
             minWidth: 0,
           }}
         >
           <Stack spacing={{ xs: 3, md: 4 }} sx={{ minWidth: 0 }}>
             <HeroStory item={data.heroStory} />
+
             <TopStoriesGrid items={data.topStories} />
+
             <Box sx={{ display: { xs: 'block', lg: 'none' } }}>
               <AdvertisementSlot variant="banner" />
             </Box>
+
             <LatestNewsSection items={data.latestNews} />
+
             <AdvertisementSlot variant="banner" />
+
             <CategorySections sections={data.categorySections} />
+
             <DistrictNewsSection districts={data.districtSections} />
+
             <VideoNewsSection items={data.videoNews} />
+
             <PhotoGallerySection items={data.photoGallery} />
           </Stack>
+
           <Sidebar popularItems={data.latestNews} />
         </Box>
       </Container>
@@ -96,10 +117,12 @@ function HomePageError({ onRetry }: { onRetry: () => void }) {
           <Typography component="h1" variant="h1">
             खबरें लोड नहीं हो सकीं
           </Typography>
+
           <Typography color="text.secondary">
             नेटवर्क या सर्वर समस्या के कारण होम फीड उपलब्ध नहीं है।
           </Typography>
-          <Button onClick={onRetry} variant="contained">
+
+          <Button variant="contained" onClick={onRetry}>
             फिर से कोशिश करें
           </Button>
         </Stack>

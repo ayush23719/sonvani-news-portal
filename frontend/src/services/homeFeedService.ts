@@ -71,8 +71,8 @@ export type HomePageData = {
 
 const imageTones: NewsItem['imageTone'][] = ['navy', 'red', 'green', 'amber', 'slate']
 
-export async function fetchHomePageData(signal?: AbortSignal): Promise<HomePageData> {
-  const response = await getJson<ApiResponse<HomeFeedApiData>>('/home', signal)
+export async function fetchHomePageData(): Promise<HomePageData> {
+  const response = await getJson<ApiResponse<HomeFeedApiData>>('/home')
 
   if (!response.success || !response.data) {
     throw new Error(response.error?.message ?? 'होम फीड लोड नहीं हो सकी।')
@@ -152,7 +152,7 @@ function buildCategorySections(items: NewsItem[]): CategoryBlock[] {
     sections.set(item.categorySlug, {
       id: `category-${item.categorySlug}`,
       title: item.category,
-      href: `/category/${item.categorySlug}`,
+      href: `/categories/${item.categorySlug}/articles`,
       items: [item],
     })
   }
@@ -182,7 +182,7 @@ function buildDistrictSections(items: NewsItem[]): DistrictBlock[] {
     sections.set(item.district, {
       id: `district-${districtSlug}`,
       name: item.district,
-      href: `/district/${districtSlug}`,
+      href: `/districts/${districtSlug}/articles`,
       items: [item],
     })
   }
@@ -197,7 +197,7 @@ function buildVideoNews(items: ApiArticleSummary[]): VideoItem[] {
     .map((item) => ({
       id: `video-${item.articleId}`,
       title: item.title,
-      href: `/news/${item.slug}`,
+      href: `/articles/${item.slug}`,
       youtubeVideoId: item.youtubeVideoId ?? '',
       duration: 'वीडियो',
       imageLabel: item.category,
@@ -211,7 +211,7 @@ function buildPhotoGallery(items: ApiArticleSummary[]): GalleryItem[] {
     .map((item, index) => ({
       id: `gallery-${item.articleId}`,
       title: item.title,
-      href: `/news/${item.slug}`,
+      href: `/articles/${item.slug}`,
       imageLabel: item.category,
       imageTone: imageTones[index % imageTones.length],
     }))

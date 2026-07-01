@@ -16,7 +16,7 @@ import { useState } from 'react'
 import { MobileNavigationDrawer } from '@/components/navigation/MobileNavigationDrawer'
 import { Navigation } from '@/components/navigation/Navigation'
 import { brandConfig } from '@/config/brand'
-
+import { Link as RouterLink } from 'react-router-dom'
 export function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
@@ -86,9 +86,20 @@ export function Header() {
                 />
                 <SearchIcon sx={{ color: 'text.secondary' }} />
               </Paper>
-              <Button color="secondary" variant="contained">
-                लाइव
-              </Button>
+              <Stack direction="row" spacing={1}>
+                <Button color="secondary" variant="contained">
+                  लाइव
+                </Button>
+
+                <Button
+                  component={RouterLink}
+                  to="/cms"
+                  variant="outlined"
+                  color="secondary"
+                >
+                  CMS Login
+                </Button>
+              </Stack>
             </Stack>
 
             <Box sx={{ flexGrow: { xs: 1, lg: 0 } }} />

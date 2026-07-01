@@ -73,7 +73,6 @@ async function fetchListing(
   kind: ListingKind,
   slug: string,
   cursor?: string,
-  signal?: AbortSignal,
 ): Promise<ListingApiResponse> {
   const query = new URLSearchParams({ limit: String(pageSize) })
 
@@ -83,7 +82,6 @@ async function fetchListing(
 
   const response = await getJson<ApiResponse<ListingApiResponse>>(
     `/api/v1/${kind === 'category' ? 'categories' : kind === 'district' ? 'districts' : 'states'}/${slug}/articles?${query.toString()}`,
-    signal,
   )
 
   if (!response.success || !response.data) {
@@ -143,7 +141,7 @@ export function ListingPage({ kind, heading, emptyMessage }: ListingPageProps) {
 
   const { data, error, isLoading, refetch } = useQuery({
     queryKey: ['listing', kind, slug, cursor],
-    queryFn: ({ signal }) => fetchListing(kind, slug, cursor, signal),
+    queryFn: () => fetchListing(kind, slug, cursor),
     enabled: !!slug,
   })
 

@@ -23,8 +23,8 @@ type ApiResponse<TData> = {
   requestId: string
 }
 
-async function fetchArticleBySlug(slug: string, signal?: AbortSignal): Promise<Article> {
-  const response = await getJson<ApiResponse<Article>>(`/articles/${slug}`, signal)
+async function fetchArticleBySlug(slug: string): Promise<Article> {
+  const response = await getJson<ApiResponse<Article>>(`/articles/${slug}`)
 
   if (!response.success || !response.data) {
     throw new Error(response.error?.message ?? 'खबर लोड नहीं हो सकी।')
@@ -42,7 +42,7 @@ export function ArticleDetailPage() {
     refetch,
   } = useQuery({
     queryKey: ['article', slug],
-    queryFn: ({ signal }) => fetchArticleBySlug(slug!, signal),
+    queryFn: () => fetchArticleBySlug(slug!),
     enabled: !!slug,
   })
 

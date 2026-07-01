@@ -1,6 +1,7 @@
 import { CssBaseline, ThemeProvider } from '@mui/material'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { type ReactNode, useState } from 'react'
+import { AuthProvider } from '@/context/AuthContext'
 import { appTheme } from './theme'
 
 type AppProvidersProps = {
@@ -25,7 +26,7 @@ export function AppProviders({ children }: AppProvidersProps) {
     <QueryClientProvider client={queryClient}>
       <ThemeProvider theme={appTheme}>
         <CssBaseline />
-        {children}
+        <AuthProvider>{children}</AuthProvider>
       </ThemeProvider>
     </QueryClientProvider>
   )
