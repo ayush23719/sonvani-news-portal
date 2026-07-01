@@ -34,7 +34,10 @@ export function Header() {
         }}
       >
         <Container>
-          <Toolbar disableGutters sx={{ minHeight: { xs: 60, sm: 68, md: 78 }, gap: { xs: 1, sm: 1.5, lg: 2 } }}>
+          <Toolbar
+            disableGutters
+            sx={{ minHeight: { xs: 60, sm: 68, md: 78 }, gap: { xs: 1, sm: 1.5, lg: 2 } }}
+          >
             <Box component="a" href="/" sx={{ display: 'inline-flex', minWidth: 0 }}>
               <Box
                 component="img"
@@ -57,7 +60,10 @@ export function Header() {
                 alignItems: 'center',
               }}
             >
-              <Button color="inherit" startIcon={<LocationOnIcon sx={{ color: 'secondary.main' }} />}>
+              <Button
+                color="inherit"
+                startIcon={<LocationOnIcon sx={{ color: 'secondary.main' }} />}
+              >
                 आपका शहर
               </Button>
               <Paper
@@ -89,14 +95,22 @@ export function Header() {
 
             <IconButton
               aria-label="खोजें"
-              sx={{ display: { xs: 'inline-flex', lg: 'none' }, minWidth: 44, minHeight: 44 }}
+              sx={{
+                display: { xs: 'inline-flex', lg: 'none' },
+                minWidth: 44,
+                minHeight: 44,
+              }}
             >
               <SearchIcon />
             </IconButton>
             <IconButton
-              aria-label="मेन्यू खोलें"
-              onClick={() => setIsMobileMenuOpen(true)}
-              sx={{ display: { xs: 'inline-flex', lg: 'none' }, minWidth: 44, minHeight: 44 }}
+              aria-label={isMobileMenuOpen ? 'मेन्यू बंद करें' : 'मेन्यू खोलें'}
+              onClick={() => setIsMobileMenuOpen((prev) => !prev)}
+              sx={{
+                display: { xs: 'inline-flex', lg: 'none' },
+                minWidth: 44,
+                minHeight: 44,
+              }}
             >
               <MenuIcon />
             </IconButton>
@@ -104,7 +118,10 @@ export function Header() {
         </Container>
         <Navigation />
       </AppBar>
-      <MobileNavigationDrawer open={isMobileMenuOpen} onClose={() => setIsMobileMenuOpen(false)} />
+      <MobileNavigationDrawer
+        open={isMobileMenuOpen}
+        onClose={() => setIsMobileMenuOpen(false)}
+      />
     </>
   )
 }
