@@ -1,6 +1,7 @@
 import AccessTimeIcon from '@mui/icons-material/AccessTime'
 import LocationOnIcon from '@mui/icons-material/LocationOn'
 import { Box, Card, Chip, Stack, Typography } from '@mui/material'
+import { Link as RouterLink } from 'react-router-dom'
 import { NewsImage } from '@/components/common/NewsImage'
 import type { NewsItem } from '@/types/homepage'
 
@@ -22,7 +23,8 @@ export function ArticleCard({ item, variant = 'standard' }: ArticleCardProps) {
         height: '100%',
         minWidth: 0,
         overflow: 'hidden',
-        transition: 'transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease',
+        transition:
+          'transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease',
         '&:hover': {
           borderColor: 'rgba(229,37,42,0.35)',
           boxShadow: { md: '0 14px 30px rgba(17,24,39,0.12)' },
@@ -34,8 +36,8 @@ export function ArticleCard({ item, variant = 'standard' }: ArticleCardProps) {
       }}
     >
       <Box
-        component="a"
-        href={item.href}
+        component={RouterLink}
+        to={item.href}
         sx={{
           display: isHorizontal ? 'grid' : 'block',
           gridTemplateColumns: {
@@ -46,6 +48,7 @@ export function ArticleCard({ item, variant = 'standard' }: ArticleCardProps) {
           height: '100%',
           color: 'inherit',
           minWidth: 0,
+          textDecoration: 'none',
         }}
       >
         <NewsImage
@@ -63,7 +66,11 @@ export function ArticleCard({ item, variant = 'standard' }: ArticleCardProps) {
         <Box
           sx={{
             minWidth: 0,
-            p: isHero ? { xs: 1.75, sm: 2, md: 2.5 } : isCompact ? 1.5 : { xs: 1.6, sm: 2 },
+            p: isHero
+              ? { xs: 1.75, sm: 2, md: 2.5 }
+              : isCompact
+                ? 1.5
+                : { xs: 1.6, sm: 2 },
           }}
         >
           <Stack direction="row" spacing={1} sx={{ mb: 1, flexWrap: 'wrap' }}>
@@ -74,7 +81,11 @@ export function ArticleCard({ item, variant = 'standard' }: ArticleCardProps) {
               sx={{ borderRadius: 1, fontWeight: 800 }}
             />
             {item.isFeatured ? (
-              <Chip label="प्रमुख" size="small" sx={{ borderRadius: 1, fontWeight: 800 }} />
+              <Chip
+                label="प्रमुख"
+                size="small"
+                sx={{ borderRadius: 1, fontWeight: 800 }}
+              />
             ) : null}
           </Stack>
           <Typography

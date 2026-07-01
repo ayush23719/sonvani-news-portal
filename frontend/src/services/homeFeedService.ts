@@ -1,6 +1,12 @@
 import { getJson } from './apiClient'
 import type { ArticleImage, SeoMetadata } from '@/types/news'
-import type { CategoryBlock, DistrictBlock, GalleryItem, NewsItem, VideoItem } from '@/types/homepage'
+import type {
+  CategoryBlock,
+  DistrictBlock,
+  GalleryItem,
+  NewsItem,
+  VideoItem,
+} from '@/types/homepage'
 
 type ApiPagination = {
   limit: number
@@ -103,7 +109,7 @@ function toNewsItem(article: ApiArticleSummary, index = 0): NewsItem {
     id: article.articleId,
     title: article.title,
     summary: article.summary,
-    href: `/news/${article.slug}`,
+    href: `/articles/${article.slug}`,
     category: article.category,
     categorySlug: article.categorySlug,
     district: article.district,
