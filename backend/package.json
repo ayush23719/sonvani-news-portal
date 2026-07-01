@@ -13,7 +13,9 @@
     "seed:sample": "node --loader ts-node/esm src/scripts/seed-local-data/sampleArticles.ts"
   },
   "dependencies": {
+    "@aws-sdk/client-cognito-identity-provider": "^3.1077.0",
     "@aws-sdk/client-dynamodb": "^3.1076.0",
+    "@aws-sdk/client-s3": "^3.1076.0",
     "@aws-sdk/lib-dynamodb": "^3.1076.0",
     "esbuild": "^0.28.1"
   },

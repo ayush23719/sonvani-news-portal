@@ -21,6 +21,8 @@ Parameters:
   AllowedCorsOrigin:
     Type: String
     Default: '*'
+  CognitoUserPoolId:
+    Type: String
 
 Globals:
   Function:
@@ -35,6 +37,7 @@ Globals:
         LOG_LEVEL: !Ref LogLevel
         ARTICLES_TABLE_NAME: !Ref ArticlesTable
         MEDIA_BUCKET_NAME: !Ref MediaBucket
+        COGNITO_USER_POOL_ID: !Ref CognitoUserPoolId
 
 Resources:
   PublicApi:
@@ -43,11 +46,20 @@ Resources:
       StageName: !Ref EnvironmentName
       EndpointConfiguration: REGIONAL
       TracingEnabled: true
+
+      Auth:
+        Authorizers:
+          CognitoAuthorizer:
+            UserPoolArn: !Sub arn:aws:cognito-idp:${AWS::Region}:${AWS::AccountId}:userpool/${CognitoUserPoolId}
+
+        AddDefaultAuthorizerToCorsPreflight: false
+
       Cors:
-        AllowMethods: "'GET,OPTIONS'"
+        AllowMethods: "'GET,POST,PUT,DELETE,OPTIONS'"
         AllowHeaders: "'Content-Type,Authorization,X-Requested-With'"
         AllowOrigin: !Sub "'${AllowedCorsOrigin}'"
         MaxAge: "'600'"
+
       MethodSettings:
         - ResourcePath: '/*'
           HttpMethod: '*'
@@ -209,6 +221,203 @@ Resources:
                 Action:
                   - s3:GetObject
                 Resource: !Sub '${MediaBucket.Arn}/*'
+
+  ArticleWriteFunctionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+
+      Policies:
+        - PolicyName: sonvani-article-write-access
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Sid: WriteArticles
+                Effect: Allow
+                Action:
+                  - dynamodb:GetItem
+                  - dynamodb:PutItem
+                  - dynamodb:UpdateItem
+                  - dynamodb:DeleteItem
+                  - dynamodb:Query
+                  - dynamodb:Scan
+                Resource:
+                  - !GetAtt ArticlesTable.Arn
+                  - !Sub '${ArticlesTable.Arn}/index/*'
+
+              - Sid: UploadMedia
+                Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:PutObject
+                  - s3:DeleteObject
+                Resource: !Sub '${MediaBucket.Arn}/*'
+              - Sid: CognitoUserManagement
+                Effect: Allow
+                Action:
+                  - cognito-idp:ListUsers
+                  - cognito-idp:AdminCreateUser
+                  - cognito-idp:AdminDeleteUser
+                  - cognito-idp:AdminDisableUser
+                  - cognito-idp:AdminEnableUser
+                  - cognito-idp:AdminResetUserPassword
+                  - cognito-idp:AdminAddUserToGroup
+                  - cognito-idp:AdminRemoveUserFromGroup
+                  - cognito-idp:AdminListGroupsForUser
+                Resource: !Sub arn:aws:cognito-idp:${AWS::Region}:${AWS::AccountId}:userpool/${CognitoUserPoolId}
+  GetUsersFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Role: !GetAtt ArticleWriteFunctionRole.Arn
+      Handler: src/functions/getUsers/app.handler
+      CodeUri: .
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref PublicApi
+            Path: /api/v1/admin/users
+            Method: GET
+            Auth:
+              Authorizer: CognitoAuthorizer
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        EntryPoints:
+          - src/functions/getUsers/app.ts
+        Format: cjs
+        Minify: true
+        Sourcemap: false
+        Target: es2022
+  CreateUserFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Role: !GetAtt ArticleWriteFunctionRole.Arn
+      Handler: src/functions/createUser/app.handler
+      CodeUri: .
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref PublicApi
+            Path: /api/v1/admin/users
+            Method: POST
+            Auth:
+              Authorizer: CognitoAuthorizer
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        EntryPoints:
+          - src/functions/createUser/app.ts
+        Format: cjs
+        Minify: true
+        Sourcemap: false
+        Target: es2022
+  DisableUserFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Role: !GetAtt ArticleWriteFunctionRole.Arn
+      Handler: src/functions/disableUser/app.handler
+      CodeUri: .
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref PublicApi
+            Path: /api/v1/admin/users/{username}/disable
+            Method: POST
+            Auth:
+              Authorizer: CognitoAuthorizer
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        EntryPoints:
+          - src/functions/disableUser/app.ts
+        Format: cjs
+        Minify: true
+        Sourcemap: false
+        Target: es2022
+  EnableUserFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Role: !GetAtt ArticleWriteFunctionRole.Arn
+      Handler: src/functions/enableUser/app.handler
+      CodeUri: .
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref PublicApi
+            Path: /api/v1/admin/users/{username}/enable
+            Method: POST
+            Auth:
+              Authorizer: CognitoAuthorizer
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        EntryPoints:
+          - src/functions/enableUser/app.ts
+        Format: cjs
+        Minify: true
+        Sourcemap: false
+        Target: es2022
+  DeleteUserFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Role: !GetAtt ArticleWriteFunctionRole.Arn
+      Handler: src/functions/deleteUser/app.handler
+      CodeUri: .
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref PublicApi
+            Path: /api/v1/admin/users/{username}
+            Method: DELETE
+            Auth:
+              Authorizer: CognitoAuthorizer
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        EntryPoints:
+          - src/functions/deleteUser/app.ts
+        Format: cjs
+        Minify: true
+        Sourcemap: false
+        Target: es2022
+  SetTemporaryPasswordFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Role: !GetAtt ArticleWriteFunctionRole.Arn
+      Handler: src/functions/setTemporaryPassword/app.handler
+      CodeUri: .
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref PublicApi
+            Path: /api/v1/admin/users/{username}/temporary-password
+            Method: POST
+            Auth:
+              Authorizer: CognitoAuthorizer
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        EntryPoints:
+          - src/functions/setTemporaryPassword/app.ts
+        Format: cjs
+        Minify: true
+        Sourcemap: false
+        Target: es2022
 
   GetHomeFeedFunction:
     Type: AWS::Serverless::Function
@@ -412,6 +621,172 @@ Resources:
       BuildProperties:
         EntryPoints:
           - src/functions/getSitemapData/app.ts
+        Format: cjs
+        Minify: true
+        Sourcemap: false
+        Target: es2022
+  CreateArticleFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Role: !GetAtt ArticleWriteFunctionRole.Arn
+      Handler: src/functions/createArticle/app.handler
+      CodeUri: .
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref PublicApi
+            Path: /api/v1/admin/articles
+            Method: POST
+            Auth:
+              Authorizer: CognitoAuthorizer
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        EntryPoints:
+          - src/functions/createArticle/app.ts
+        Format: cjs
+        Minify: true
+        Sourcemap: false
+        Target: es2022
+  GetArticleByIdFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Role: !GetAtt PublicReadFunctionRole.Arn
+      Handler: src/functions/getArticleById/app.handler
+      CodeUri: .
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref PublicApi
+            Path: /api/v1/admin/articles/{articleId}
+            Method: GET
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        EntryPoints:
+          - src/functions/getArticleById/app.ts
+        Format: cjs
+        Minify: true
+        Sourcemap: false
+        Target: es2022
+  UpdateArticleFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Role: !GetAtt ArticleWriteFunctionRole.Arn
+      Handler: src/functions/updateArticle/app.handler
+      CodeUri: .
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref PublicApi
+            Path: /api/v1/admin/articles/{articleId}
+            Method: PUT
+            Auth:
+              Authorizer: CognitoAuthorizer
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        EntryPoints:
+          - src/functions/updateArticle/app.ts
+        Format: cjs
+        Minify: true
+        Sourcemap: false
+        Target: es2022
+  DeleteArticleFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Role: !GetAtt ArticleWriteFunctionRole.Arn
+      Handler: src/functions/deleteArticle/app.handler
+      CodeUri: .
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref PublicApi
+            Path: /api/v1/admin/articles/{articleId}
+            Method: DELETE
+            Auth:
+              Authorizer: CognitoAuthorizer
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        EntryPoints:
+          - src/functions/deleteArticle/app.ts
+        Format: cjs
+        Minify: true
+        Sourcemap: false
+        Target: es2022
+  PublishArticleFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Role: !GetAtt ArticleWriteFunctionRole.Arn
+      Handler: src/functions/publishArticle/app.handler
+      CodeUri: .
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref PublicApi
+            Path: /api/v1/admin/articles/{articleId}/publish
+            Method: POST
+            Auth:
+              Authorizer: CognitoAuthorizer
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        EntryPoints:
+          - src/functions/publishArticle/app.ts
+        Format: cjs
+        Minify: true
+        Sourcemap: false
+        Target: es2022
+  SaveDraftFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Role: !GetAtt ArticleWriteFunctionRole.Arn
+      Handler: src/functions/saveDraft/app.handler
+      CodeUri: .
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref PublicApi
+            Path: /api/v1/admin/articles/{articleId}/draft
+            Method: POST
+            Auth:
+              Authorizer: CognitoAuthorizer
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        EntryPoints:
+          - src/functions/saveDraft/app.ts
+        Format: cjs
+        Minify: true
+        Sourcemap: false
+        Target: es2022
+  GetMyArticlesFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Role: !GetAtt ArticleWriteFunctionRole.Arn
+      Handler: src/functions/getMyArticles/app.handler
+      CodeUri: .
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref PublicApi
+            Path: /api/v1/admin/articles
+            Method: GET
+            Auth:
+              Authorizer: CognitoAuthorizer
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        EntryPoints:
+          - src/functions/getMyArticles/app.ts
         Format: cjs
         Minify: true
         Sourcemap: false
