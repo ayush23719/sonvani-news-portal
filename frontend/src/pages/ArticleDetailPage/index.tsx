@@ -470,13 +470,14 @@ function ArticleNotFound({ onRetry }: { onRetry?: () => void } = {}) {
           <Stack
             direction="row"
             spacing={3}
-            flexWrap="wrap"
+
             sx={{
               pb: 2,
               borderBottom: 1,
               borderColor: 'divider',
               color: 'text.secondary',
               fontSize: '.9rem',
+              flexWrap: 'wrap',
             }}
           >
             {onRetry && (
