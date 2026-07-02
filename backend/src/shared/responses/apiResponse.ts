@@ -9,7 +9,10 @@ const defaultHeaders = {
   'Access-Control-Allow-Methods': 'GET,OPTIONS',
 }
 
-export function jsonResponse<TData>(statusCode: number, body: ApiResponse<TData>): APIGatewayProxyResult {
+export function jsonResponse<TData>(
+  statusCode: number,
+  body: ApiResponse<TData>,
+): APIGatewayProxyResult {
   return {
     statusCode,
     headers: defaultHeaders,
@@ -17,7 +20,11 @@ export function jsonResponse<TData>(statusCode: number, body: ApiResponse<TData>
   }
 }
 
-export function successResponse<TData>(data: TData, requestId: string, statusCode = 200): APIGatewayProxyResult {
+export function successResponse<TData>(
+  data: TData,
+  requestId: string,
+  statusCode = 200,
+): APIGatewayProxyResult {
   return jsonResponse(statusCode, {
     success: true,
     data,
@@ -38,6 +45,8 @@ export function errorResponse(error: unknown, requestId: string): APIGatewayProx
     })
   }
 
+  console.error(error)
+
   const apiError: ApiError = {
     code: 'INTERNAL_SERVER_ERROR',
     message: 'Unexpected server error.',
@@ -50,9 +59,16 @@ export function errorResponse(error: unknown, requestId: string): APIGatewayProx
   })
 }
 
-export function notImplementedResponse(functionName: string, requestId: string): APIGatewayProxyResult {
+export function notImplementedResponse(
+  functionName: string,
+  requestId: string,
+): APIGatewayProxyResult {
   return errorResponse(
-    new AppError('NOT_IMPLEMENTED', `${functionName} is not implemented in this milestone.`, 501),
+    new AppError(
+      'NOT_IMPLEMENTED',
+      `${functionName} is not implemented in this milestone.`,
+      501,
+    ),
     requestId,
   )
 }

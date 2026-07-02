@@ -29,7 +29,9 @@ type AuthContextValue = {
   user: AuthUser | null
   isAuthenticated: boolean
   isLoading: boolean
+  requiresNewPassword: boolean
   signIn: (username: string, password: string) => Promise<void>
+  completeNewPassword: (password: string) => Promise<void>
   signUp: (
     username: string,
     email: string,
@@ -121,6 +123,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(() => readStoredUser())
   const [isLoading, setIsLoading] = useState(true)
 
+  const [requiresNewPassword, setRequiresNewPassword] = useState(false)
+  const [pendingCognitoUser, setPendingCognitoUser] = useState<CognitoUser | null>(null)
+
   useEffect(() => {
     const storedUser = readStoredUser()
     if (storedUser) {
@@ -161,10 +166,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           resolve()
         },
         onFailure: (error) => {
+          console.error('Cognito login error:', error)
           reject(error)
         },
         newPasswordRequired: () => {
-          reject(new Error('A new password is required before signing in.'))
+          setPendingCognitoUser(cognitoUser)
+          setRequiresNewPassword(true)
+          resolve()
         },
         mfaRequired: () => {
           reject(new Error('Multi-factor authentication is required.'))
@@ -172,7 +180,45 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       })
     })
   }
+  const completeNewPassword = async (password: string) => {
+    if (!pendingCognitoUser) {
+      throw new Error('No password change request found.')
+    }
 
+    await new Promise<void>((resolve, reject) => {
+      pendingCognitoUser.completeNewPasswordChallenge(
+        password,
+        {},
+        {
+          onSuccess: (result) => {
+            const idToken = result.getIdToken().getJwtToken()
+            const accessToken = result.getAccessToken().getJwtToken()
+            const refreshToken = result.getRefreshToken()?.getToken()
+
+            const claims = decodeJwtPayload(idToken)
+
+            const nextUser: AuthUser = {
+              username: pendingCognitoUser.getUsername(),
+              email: typeof claims.email === 'string' ? claims.email : undefined,
+              role: resolveRole(claims),
+              idToken,
+              accessToken,
+              refreshToken,
+            }
+
+            window.localStorage.setItem(STORAGE_KEY, JSON.stringify(nextUser))
+
+            setUser(nextUser)
+            setPendingCognitoUser(null)
+            setRequiresNewPassword(false)
+
+            resolve()
+          },
+          onFailure: reject,
+        },
+      )
+    })
+  }
   const signUp = async (
     username: string,
     email: string,
@@ -186,7 +232,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     ]
 
     await new Promise<void>((resolve, reject) => {
-      userPool.signUp(username, password, attributeList, undefined, (error) => {
+      userPool.signUp(username, password, attributeList, [], (error) => {
         if (error) {
           reject(error)
           return
@@ -216,11 +262,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       user,
       isAuthenticated: Boolean(user),
       isLoading,
+      requiresNewPassword,
       signIn,
+      completeNewPassword,
       signUp,
       signOut,
     }),
-    [isLoading, user],
+    [user, isLoading, requiresNewPassword, signIn, completeNewPassword, signUp, signOut],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

@@ -5,11 +5,11 @@ const apiBaseUrl = env.apiBaseUrl.replace(/\/$/, '')
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const auth = localStorage.getItem('hindi-news-portal-auth')
 
-  let accessToken = ''
+  let idToken = ''
 
   if (auth) {
     try {
-      accessToken = JSON.parse(auth).accessToken
+      idToken = JSON.parse(auth).idToken
     } catch {}
   }
 
@@ -17,9 +17,9 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
     headers: {
       Accept: 'application/json',
       'Content-Type': 'application/json',
-      ...(accessToken
+      ...(idToken
         ? {
-            Authorization: `Bearer ${accessToken}`,
+            Authorization: `Bearer ${idToken}`,
           }
         : {}),
       ...(options?.headers ?? {}),

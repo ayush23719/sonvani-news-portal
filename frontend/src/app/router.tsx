@@ -8,6 +8,7 @@ import { CategoryPage } from '@/pages/CategoryPage'
 import { DistrictPage } from '@/pages/DistrictPage'
 import { StatePage } from '@/pages/StatePage'
 import { LoginPage } from '@/pages/LoginPage'
+import { ChangePasswordPage } from '@/pages/ChangePasswordPage'
 import { AdminUsersPage } from '@/pages/AdminUsersPage'
 import { AdminDashboardPage } from '@/pages/AdminDashboardPage'
 import { AdminArticlesPage } from '@/pages/AdminArticlesPage'
@@ -48,6 +49,10 @@ export const router = createBrowserRouter([
       {
         path: 'cms',
         element: <LoginPage />,
+      },
+      {
+        path: 'change-password',
+        element: <ChangePasswordPage />,
       },
       {
         path: '*',

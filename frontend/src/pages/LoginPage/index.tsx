@@ -16,7 +16,7 @@ export function LoginPage() {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
-  const { signIn, isAuthenticated } = useAuth()
+  const { signIn, isAuthenticated, requiresNewPassword } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
 
@@ -24,10 +24,15 @@ export function LoginPage() {
     new URLSearchParams(location.search).get('redirect') ?? '/admin/articles'
 
   useEffect(() => {
+    if (requiresNewPassword) {
+      navigate('/change-password', { replace: true })
+      return
+    }
+
     if (isAuthenticated) {
       navigate(redirectTarget, { replace: true })
     }
-  }, [isAuthenticated, navigate, redirectTarget])
+  }, [isAuthenticated, requiresNewPassword, navigate, redirectTarget])
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -35,7 +40,10 @@ export function LoginPage() {
 
     try {
       await signIn(username, password)
-      navigate(redirectTarget, { replace: true })
+
+      if (!requiresNewPassword) {
+        navigate(redirectTarget, { replace: true })
+      }
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Login failed.'
       setError(message)

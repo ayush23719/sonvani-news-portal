@@ -35,6 +35,7 @@ export const handler: APIGatewayProxyHandler = async (event) => {
       requestId,
     )
   } catch (error) {
+    console.error('SetTemporaryPassword:', error)
     return errorResponse(error, requestId)
   }
 }
