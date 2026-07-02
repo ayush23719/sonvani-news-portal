@@ -296,7 +296,7 @@ export function ArticleForm({ mode, articleId }: ArticleFormProps) {
       <Card>
         <CardContent>
           <Stack spacing={3}>
-            <Typography variant="h6" fontWeight={700}>
+            <Typography variant="h6" sx={{ fontWeight: 700 }}>
               Article Information
             </Typography>
 
@@ -378,7 +378,7 @@ export function ArticleForm({ mode, articleId }: ArticleFormProps) {
 
             <Divider />
 
-            <Typography variant="h6" fontWeight={700}>
+            <Typography variant="h6" sx={{ fontWeight: 700 }}>
               Article Flags
             </Typography>
 

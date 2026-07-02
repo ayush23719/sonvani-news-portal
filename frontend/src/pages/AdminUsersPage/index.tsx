@@ -99,7 +99,7 @@ export function AdminUsersPage() {
           alignItems: 'center',
         }}
       >
-        <Typography variant="h4" fontWeight={700}>
+        <Typography variant="h4" sx={{ fontWeight: 700 }}>
           Users
         </Typography>
 
@@ -140,7 +140,13 @@ export function AdminUsersPage() {
                     <TableCell>{user.enabled ? 'Yes' : 'No'}</TableCell>
 
                     <TableCell align="right">
-                      <Stack direction="row" spacing={1} justifyContent="flex-end">
+                      <Box
+                        sx={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          gap: 2,
+                        }}
+                      >
                         {user.enabled ? (
                           <Button
                             size="small"
@@ -189,7 +195,7 @@ export function AdminUsersPage() {
                         >
                           Delete
                         </Button>
-                      </Stack>
+                      </Box>
                     </TableCell>
                   </TableRow>
                 ))}

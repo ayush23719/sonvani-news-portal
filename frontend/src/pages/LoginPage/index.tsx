@@ -4,13 +4,12 @@ import {
   Card,
   CardContent,
   Container,
-  Link,
   Stack,
   TextField,
   Typography,
 } from '@mui/material'
 import { useEffect, useState } from 'react'
-import { Link as RouterLink, useLocation, useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/context/AuthContext'
 
 export function LoginPage() {
