@@ -8,10 +8,10 @@ export function AdminDashboardPage() {
     <Stack spacing={3}>
       <Box>
         <Typography variant="h4" sx={{ fontWeight: 700 }}>
-          {user?.role === 'ADMIN' ? 'Admin Dashboard' : 'Reporter Dashboard'}
+          {user?.role === 'ADMIN' ? 'व्यवस्थापक डैशबोर्ड' : 'संवाददाता डैशबोर्ड'}
         </Typography>
         <Typography variant="body1" color="text.secondary" sx={{ mt: 1 }}>
-          Authentication and authorization foundation is now in place.
+          समाचार पोर्टल प्रबंधन प्रणाली में आपका स्वागत है।
         </Typography>
       </Box>
 
@@ -19,9 +19,13 @@ export function AdminDashboardPage() {
         <Grid size={{ xs: 12, md: 6 }}>
           <Card>
             <CardContent>
-              <Typography variant="h6">Role</Typography>
+              <Typography variant="h6">भूमिका</Typography>
               <Typography variant="body1" sx={{ mt: 1 }}>
-                {user?.role ?? 'PUBLIC'}
+                {user?.role === 'ADMIN'
+                  ? 'व्यवस्थापक'
+                  : user?.role === 'REPORTER'
+                    ? 'संवाददाता'
+                    : 'सार्वजनिक'}
               </Typography>
             </CardContent>
           </Card>
@@ -29,9 +33,9 @@ export function AdminDashboardPage() {
         <Grid size={{ xs: 12, md: 6 }}>
           <Card>
             <CardContent>
-              <Typography variant="h6">Status</Typography>
+              <Typography variant="h6">स्थिति</Typography>
               <Typography variant="body1" sx={{ mt: 1 }}>
-                Secure session is active.
+                सुरक्षित सत्र सक्रिय है।
               </Typography>
             </CardContent>
           </Card>

@@ -3,13 +3,20 @@ export type NewsItem = {
   title: string
   summary: string
   href: string
+
   category: string
   categorySlug: string
+
   district?: string
   state?: string
+
   publishedAt: string
+
   imageLabel: string
   imageTone: 'red' | 'navy' | 'green' | 'amber' | 'slate'
+
+  imageUrl?: string
+
   isBreaking?: boolean
   isFeatured?: boolean
 }
@@ -41,6 +48,9 @@ export type GalleryItem = {
   id: string
   title: string
   href: string
+
   imageLabel: string
   imageTone: NewsItem['imageTone']
+
+  imageUrl?: string
 }

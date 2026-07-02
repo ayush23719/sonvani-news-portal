@@ -12,8 +12,12 @@ import {
   Stack,
   TextField,
   Typography,
+  Accordion,
+  AccordionDetails,
+  AccordionSummary,
 } from '@mui/material'
-
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
+import { uploadImage } from '@/services/mediaService'
 import { useNavigate } from 'react-router-dom'
 import {
   createArticle,
@@ -26,6 +30,13 @@ import { useEffect, useState } from 'react'
 type ArticleFormProps = {
   mode: 'create' | 'edit'
   articleId?: string
+}
+
+type ArticleImage = {
+  url: string
+  altText: string
+  caption: string
+  credit: string
 }
 
 type ArticleFormData = {
@@ -45,7 +56,7 @@ type ArticleFormData = {
   seoDescription: string
   seoKeywords: string
 
-  images: string[]
+  images: ArticleImage[]
 }
 
 const emptyForm: ArticleFormData = {
@@ -107,6 +118,9 @@ export function ArticleForm({ mode, articleId }: ArticleFormProps) {
               }
               images?: Array<{
                 url: string
+                altText?: string
+                caption?: string
+                credit?: string
               }>
             }
           }
@@ -131,10 +145,16 @@ export function ArticleForm({ mode, articleId }: ArticleFormProps) {
           seoDescription: article.seo?.description ?? '',
           seoKeywords: article.seo?.keywords?.join(', ') ?? '',
 
-          images: article.images?.map((image) => image.url) ?? [],
+          images:
+            article.images?.map((image) => ({
+              url: image.url,
+              altText: image.altText ?? '',
+              caption: image.caption ?? '',
+              credit: image.credit ?? '',
+            })) ?? [],
         })
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load article.')
+        setError(err instanceof Error ? err.message : 'समाचार लोड नहीं हो सका।')
       } finally {
         setLoading(false)
       }
@@ -180,14 +200,22 @@ export function ArticleForm({ mode, articleId }: ArticleFormProps) {
         isBreaking: form.isBreaking,
         isFeatured: form.isFeatured,
         seo: {
-          title: form.seoTitle,
-          description: form.seoDescription,
+          title: form.seoTitle || form.title,
+          description: form.seoDescription || form.summary,
           keywords: form.seoKeywords
             .split(',')
             .map((k) => k.trim())
             .filter(Boolean),
         },
         status: 'DRAFT',
+        images: form.images.map((image, index) => ({
+          url: image.url,
+          altText: image.altText,
+          caption: image.caption,
+          credit: image.credit,
+          sortOrder: index,
+          isPrimary: index === 0,
+        })),
       }
 
       if (mode === 'create') {
@@ -196,13 +224,13 @@ export function ArticleForm({ mode, articleId }: ArticleFormProps) {
         await updateArticle(articleId, payload)
       }
 
-      setSuccess('Draft saved successfully.')
+      setSuccess('ड्राफ्ट सफलतापूर्वक सहेजा गया।')
 
       setTimeout(() => {
         navigate('/admin/articles')
       }, 1000)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save draft.')
+      setError(err instanceof Error ? err.message : 'ड्राफ्ट सहेजने में विफल।')
     } finally {
       setSaving(false)
     }
@@ -226,14 +254,21 @@ export function ArticleForm({ mode, articleId }: ArticleFormProps) {
         isBreaking: form.isBreaking,
         isFeatured: form.isFeatured,
         seo: {
-          title: form.seoTitle,
-          description: form.seoDescription,
+          title: form.seoTitle || form.title,
+          description: form.seoDescription || form.summary,
           keywords: form.seoKeywords
             .split(',')
             .map((k) => k.trim())
             .filter(Boolean),
         },
-        images: [],
+        images: form.images.map((image, index) => ({
+          url: image.url,
+          altText: image.altText,
+          caption: image.caption,
+          credit: image.credit,
+          sortOrder: index,
+          isPrimary: index === 0,
+        })),
       }
 
       if (mode === 'create') {
@@ -251,13 +286,13 @@ export function ArticleForm({ mode, articleId }: ArticleFormProps) {
         await publishArticle(articleId)
       }
 
-      setSuccess('Article published successfully.')
+      setSuccess('समाचार सफलतापूर्वक प्रकाशित किया गया।')
 
       setTimeout(() => {
         navigate('/admin/articles')
       }, 800)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to publish article.')
+      setError(err instanceof Error ? err.message : 'समाचार प्रकाशित नहीं हो सका।')
     } finally {
       setSaving(false)
     }
@@ -281,11 +316,11 @@ export function ArticleForm({ mode, articleId }: ArticleFormProps) {
     <Stack spacing={3}>
       <Box>
         <Typography variant="h4" sx={{ fontWeight: 700 }}>
-          {mode === 'create' ? 'Create Article' : 'Edit Article'}
+          {mode === 'create' ? 'नया समाचार' : 'समाचार संपादित करें'}
         </Typography>
 
         <Typography color="text.secondary" sx={{ mt: 1 }}>
-          Fill the article details below.
+          नीचे समाचार की पूरी जानकारी भरें।
         </Typography>
       </Box>
 
@@ -297,7 +332,7 @@ export function ArticleForm({ mode, articleId }: ArticleFormProps) {
         <CardContent>
           <Stack spacing={3}>
             <Typography variant="h6" sx={{ fontWeight: 700 }}>
-              Article Information
+              समाचार की जानकारी
             </Typography>
 
             <Divider />
@@ -305,7 +340,7 @@ export function ArticleForm({ mode, articleId }: ArticleFormProps) {
             <TextField
               fullWidth
               required
-              label="Title"
+              label="शीर्षक"
               value={form.title}
               onChange={update('title')}
             />
@@ -314,7 +349,7 @@ export function ArticleForm({ mode, articleId }: ArticleFormProps) {
               fullWidth
               multiline
               rows={3}
-              label="Summary"
+              label="संक्षेप"
               value={form.summary}
               onChange={update('summary')}
             />
@@ -323,7 +358,7 @@ export function ArticleForm({ mode, articleId }: ArticleFormProps) {
               fullWidth
               multiline
               rows={12}
-              label="Body"
+              label="समाचार"
               value={form.body}
               onChange={update('body')}
             />
@@ -332,7 +367,7 @@ export function ArticleForm({ mode, articleId }: ArticleFormProps) {
               <Grid size={{ xs: 12, md: 6 }}>
                 <TextField
                   fullWidth
-                  label="Reporter Name"
+                  label="संवाददाता का नाम"
                   value={form.reporterName}
                   onChange={update('reporterName')}
                 />
@@ -341,7 +376,7 @@ export function ArticleForm({ mode, articleId }: ArticleFormProps) {
               <Grid size={{ xs: 12, md: 6 }}>
                 <TextField
                   fullWidth
-                  label="Category"
+                  label="श्रेणी"
                   value={form.category}
                   onChange={update('category')}
                 />
@@ -350,7 +385,7 @@ export function ArticleForm({ mode, articleId }: ArticleFormProps) {
               <Grid size={{ xs: 12, md: 6 }}>
                 <TextField
                   fullWidth
-                  label="District"
+                  label="जिला"
                   value={form.district}
                   onChange={update('district')}
                 />
@@ -359,7 +394,7 @@ export function ArticleForm({ mode, articleId }: ArticleFormProps) {
               <Grid size={{ xs: 12, md: 6 }}>
                 <TextField
                   fullWidth
-                  label="State"
+                  label="राज्य"
                   value={form.state}
                   onChange={update('state')}
                 />
@@ -368,7 +403,7 @@ export function ArticleForm({ mode, articleId }: ArticleFormProps) {
               <Grid size={{ xs: 12 }}>
                 <TextField
                   fullWidth
-                  label="YouTube URL"
+                  label="यूट्यूब लिंक"
                   value={form.youtubeVideoId}
                   onChange={update('youtubeVideoId')}
                   placeholder="https://youtu.be/..."
@@ -379,7 +414,7 @@ export function ArticleForm({ mode, articleId }: ArticleFormProps) {
             <Divider />
 
             <Typography variant="h6" sx={{ fontWeight: 700 }}>
-              Article Flags
+              समाचार के झंडे
             </Typography>
 
             <FormControlLabel
@@ -389,7 +424,7 @@ export function ArticleForm({ mode, articleId }: ArticleFormProps) {
                   onChange={updateCheckbox('isBreaking')}
                 />
               }
-              label="Breaking News"
+              label="ताज़ा समाचार"
             />
 
             <FormControlLabel
@@ -399,52 +434,91 @@ export function ArticleForm({ mode, articleId }: ArticleFormProps) {
                   onChange={updateCheckbox('isFeatured')}
                 />
               }
-              label="Featured Article"
+              label="विशेष समाचार"
             />
 
             <Divider />
 
-            <Typography variant="h6" sx={{ fontWeight: 700 }}>
-              SEO
-            </Typography>
+            <Accordion>
+              <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                <Typography sx={{ fontWeight: 700 }}>उन्नत विकल्प (SEO)</Typography>
+              </AccordionSummary>
 
-            <TextField
-              fullWidth
-              label="SEO Title"
-              value={form.seoTitle}
-              onChange={update('seoTitle')}
-            />
+              <AccordionDetails>
+                <Stack spacing={2}>
+                  <TextField
+                    fullWidth
+                    label="एसईओ शीर्षक"
+                    value={form.seoTitle}
+                    onChange={update('seoTitle')}
+                  />
 
-            <TextField
-              fullWidth
-              multiline
-              rows={3}
-              label="SEO Description"
-              value={form.seoDescription}
-              onChange={update('seoDescription')}
-            />
+                  <TextField
+                    fullWidth
+                    multiline
+                    rows={3}
+                    label="एसईओ विवरण"
+                    value={form.seoDescription}
+                    onChange={update('seoDescription')}
+                  />
 
-            <TextField
-              fullWidth
-              label="SEO Keywords"
-              helperText="Comma separated keywords"
-              value={form.seoKeywords}
-              onChange={update('seoKeywords')}
-            />
+                  <TextField
+                    fullWidth
+                    label="एसईओ कीवर्ड"
+                    helperText="कॉमा (,) से अलग करें"
+                    value={form.seoKeywords}
+                    onChange={update('seoKeywords')}
+                  />
+                </Stack>
+              </AccordionDetails>
+            </Accordion>
 
             <Divider />
 
             <Typography variant="h6" sx={{ fontWeight: 700 }}>
-              Images
+              चित्र
             </Typography>
 
             <Alert severity="info">
-              Image upload will be connected to Amazon S3 in the next milestone.
+              चित्र अपलोड करें। चाहें तो प्रत्येक चित्र के लिए विवरण, कैप्शन और
+              फ़ोटोग्राफ़र का नाम भी भर सकते हैं।
             </Alert>
 
-            <Button variant="outlined" component="label">
-              Upload Image
-              <input hidden type="file" accept="image/*" />
+            <Button variant="outlined" component="label" disabled={saving}>
+              चित्र अपलोड करें
+              <input
+                hidden
+                type="file"
+                accept="image/*"
+                onChange={async (event) => {
+                  const file = event.target.files?.[0]
+
+                  if (!file) return
+
+                  try {
+                    setSaving(true)
+
+                    const imageUrl = await uploadImage(file)
+
+                    setForm((previous) => ({
+                      ...previous,
+                      images: [
+                        ...previous.images,
+                        {
+                          url: imageUrl,
+                          altText: '',
+                          caption: '',
+                          credit: '',
+                        },
+                      ],
+                    }))
+                  } catch {
+                    setError('चित्र अपलोड नहीं हो सका।')
+                  } finally {
+                    setSaving(false)
+                  }
+                }}
+              />
             </Button>
 
             {form.images.length > 0 && (
@@ -452,14 +526,48 @@ export function ArticleForm({ mode, articleId }: ArticleFormProps) {
                 {form.images.map((image, index) => (
                   <Card key={index} variant="outlined">
                     <CardContent>
-                      <Typography
-                        variant="body2"
-                        sx={{
-                          wordBreak: 'break-all',
-                        }}
-                      >
-                        {image}
-                      </Typography>
+                      <Stack spacing={2}>
+                        <Box
+                          component="img"
+                          src={image.url}
+                          alt={image.altText}
+                          sx={{
+                            width: 220,
+                            maxWidth: '100%',
+                            borderRadius: 2,
+                          }}
+                        />
+
+                        <TextField
+                          label="चित्र विवरण (Alt Text)"
+                          value={image.altText}
+                          onChange={(e) => {
+                            const images = [...form.images]
+                            images[index].altText = e.target.value
+                            setForm((prev) => ({ ...prev, images }))
+                          }}
+                        />
+
+                        <TextField
+                          label="कैप्शन"
+                          value={image.caption}
+                          onChange={(e) => {
+                            const images = [...form.images]
+                            images[index].caption = e.target.value
+                            setForm((prev) => ({ ...prev, images }))
+                          }}
+                        />
+
+                        <TextField
+                          label="फ़ोटोग्राफ़र / श्रेय"
+                          value={image.credit}
+                          onChange={(e) => {
+                            const images = [...form.images]
+                            images[index].credit = e.target.value
+                            setForm((prev) => ({ ...prev, images }))
+                          }}
+                        />
+                      </Stack>
                     </CardContent>
                   </Card>
                 ))}
@@ -477,11 +585,15 @@ export function ArticleForm({ mode, articleId }: ArticleFormProps) {
               }}
             >
               <Button variant="outlined" disabled={saving} onClick={saveDraft}>
-                Save Draft
+                ड्राफ्ट सहेजें
               </Button>
 
               <Button variant="contained" disabled={saving} onClick={publish}>
-                {saving ? <CircularProgress size={22} color="inherit" /> : 'Publish'}
+                {saving ? (
+                  <CircularProgress size={22} color="inherit" />
+                ) : (
+                  'प्रकाशित करें'
+                )}
               </Button>
             </Box>
           </Stack>

@@ -171,14 +171,15 @@ Resources:
               SSEAlgorithm: AES256
       PublicAccessBlockConfiguration:
         BlockPublicAcls: true
-        BlockPublicPolicy: true
         IgnorePublicAcls: true
-        RestrictPublicBuckets: true
+        BlockPublicPolicy: false
+        RestrictPublicBuckets: false
       CorsConfiguration:
         CorsRules:
           - AllowedMethods:
               - GET
               - HEAD
+              - PUT
             AllowedOrigins:
               - !Ref AllowedCorsOrigin
             AllowedHeaders:
@@ -189,6 +190,19 @@ Resources:
           Value: sonvani
         - Key: Environment
           Value: !Ref EnvironmentName
+  MediaBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref MediaBucket
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: PublicReadImages
+            Effect: Allow
+            Principal: '*'
+            Action:
+              - s3:GetObject
+            Resource: !Sub '${MediaBucket.Arn}/*'
 
   PublicReadFunctionRole:
     Type: AWS::IAM::Role
@@ -260,6 +274,7 @@ Resources:
                   - s3:GetObject
                   - s3:PutObject
                   - s3:DeleteObject
+                  - s3:PutObjectAcl
                 Resource: !Sub '${MediaBucket.Arn}/*'
               - Sid: CognitoUserManagement
                 Effect: Allow
@@ -275,6 +290,30 @@ Resources:
                   - cognito-idp:AdminRemoveUserFromGroup
                   - cognito-idp:AdminListGroupsForUser
                 Resource: !Sub arn:aws:cognito-idp:${AWS::Region}:${AWS::AccountId}:userpool/${CognitoUserPoolId}
+  GetUploadUrlFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Role: !GetAtt ArticleWriteFunctionRole.Arn
+      Handler: src/functions/getUploadUrl/app.handler
+      CodeUri: .
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref PublicApi
+            Path: /api/v1/admin/media/upload-url
+            Method: POST
+            Auth:
+              Authorizer: CognitoAuthorizer
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        EntryPoints:
+          - src/functions/getUploadUrl/app.ts
+        Format: cjs
+        Minify: true
+        Sourcemap: false
+        Target: es2022
   GetUsersFunction:
     Type: AWS::Serverless::Function
     Properties:

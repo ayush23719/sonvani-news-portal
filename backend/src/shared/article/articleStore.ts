@@ -245,18 +245,24 @@ function slugify(value: string): string {
     .replace(/(^-|-$)/g, '')
 }
 
-function extractYoutubeVideoId(value?: string): string | undefined {
+export function extractYoutubeVideoId(value?: string): string | undefined {
   if (!value) {
     return undefined
   }
 
-  const trimmedValue = value.trim()
-  const youtubeMatch = trimmedValue.match(
-    /(?:youtube\.com\/watch\?v=|youtu\.be\/)([\w-]{11})/,
-  )
-  if (youtubeMatch?.[1]) {
-    return youtubeMatch[1]
+  const trimmed = value.trim()
+
+  if (/^[\w-]{11}$/.test(trimmed)) {
+    return trimmed
   }
 
-  return trimmedValue
+  const match = trimmed.match(
+    /(?:youtu\.be\/|youtube\.com\/(?:watch\?.*v=|embed\/|shorts\/))([\w-]{11})/,
+  )
+
+  if (match?.[1]) {
+    return match[1]
+  }
+
+  return trimmed
 }

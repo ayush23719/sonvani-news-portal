@@ -109,14 +109,22 @@ function toNewsItem(article: ApiArticleSummary, index = 0): NewsItem {
     id: article.articleId,
     title: article.title,
     summary: article.summary,
+
     href: `/articles/${article.slug}`,
+
     category: article.category,
     categorySlug: article.categorySlug,
+
     district: article.district,
     state: article.state,
+
     publishedAt: formatPublishedTime(article.publishDate),
+
     imageLabel: article.category,
     imageTone: imageTones[index % imageTones.length],
+
+    imageUrl: article.primaryImage?.url ?? article.images?.[0]?.url,
+
     isBreaking: article.isBreaking,
     isFeatured: article.isFeatured,
   }
@@ -210,10 +218,16 @@ function buildPhotoGallery(items: ApiArticleSummary[]): GalleryItem[] {
     .slice(0, 4)
     .map((item, index) => ({
       id: `gallery-${item.articleId}`,
+
       title: item.title,
+
       href: `/articles/${item.slug}`,
+
       imageLabel: item.category,
+
       imageTone: imageTones[index % imageTones.length],
+
+      imageUrl: item.primaryImage?.url ?? item.images[0]?.url,
     }))
 }
 

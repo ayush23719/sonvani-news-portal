@@ -53,6 +53,7 @@ export function ArticleCard({ item, variant = 'standard' }: ArticleCardProps) {
       >
         <NewsImage
           label={item.imageLabel}
+          imageUrl={item.imageUrl}
           tone={item.imageTone}
           aspectRatio={isHorizontal ? '1 / 1' : isHero ? '16 / 10' : '16 / 9'}
           minHeight={

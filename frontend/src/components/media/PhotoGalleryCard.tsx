@@ -12,7 +12,12 @@ export function PhotoGalleryCard({ item }: PhotoGalleryCardProps) {
     <Card component="article" elevation={0} sx={{ overflow: 'hidden' }}>
       <Box component="a" href={item.href} sx={{ color: 'inherit', display: 'block' }}>
         <Box sx={{ position: 'relative' }}>
-          <NewsImage label={item.imageLabel} tone={item.imageTone} minHeight={170} />
+          <NewsImage
+            label={item.imageLabel}
+            imageUrl={item.imageUrl}
+            tone={item.imageTone}
+            minHeight={170}
+          />
           <Box
             sx={{
               position: 'absolute',
@@ -29,7 +34,10 @@ export function PhotoGalleryCard({ item }: PhotoGalleryCardProps) {
           </Box>
         </Box>
         <Box sx={{ p: 2 }}>
-          <Typography component="h3" sx={{ fontSize: '1rem', fontWeight: 800, lineHeight: 1.45 }}>
+          <Typography
+            component="h3"
+            sx={{ fontSize: '1rem', fontWeight: 800, lineHeight: 1.45 }}
+          >
             {item.title}
           </Typography>
         </Box>

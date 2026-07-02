@@ -33,6 +33,26 @@ async function fetchArticleBySlug(slug: string): Promise<Article> {
   return response.data
 }
 
+function extractYoutubeId(value?: string) {
+  if (!value) return ''
+
+  if (!value.includes('youtube') && !value.includes('youtu.be')) {
+    return value
+  }
+
+  try {
+    const url = new URL(value)
+
+    if (url.hostname.includes('youtu.be')) {
+      return url.pathname.replace('/', '')
+    }
+
+    return url.searchParams.get('v') ?? ''
+  } catch {
+    return value
+  }
+}
+
 export function ArticleDetailPage() {
   const { slug } = useParams<{ slug: string }>()
   const {
@@ -64,28 +84,48 @@ export function ArticleDetailPage() {
   if (error || !article) {
     return <ArticleNotFound onRetry={() => void refetch()} />
   }
-
+  const youtubeId = extractYoutubeId(article.youtubeVideoId)
   return (
-    <Container sx={{ py: { xs: 2.5, md: 4 } }}>
+    <Container
+      maxWidth="lg"
+      sx={{
+        py: {
+          xs: 3,
+          md: 5,
+        },
+      }}
+    >
       <Paper
-        elevation={0}
+        elevation={2}
         sx={{
-          border: 1,
-          borderColor: 'divider',
-          p: { xs: 2, sm: 3, md: 4 },
+          borderRadius: 3,
+          p: {
+            xs: 2.5,
+            sm: 4,
+            md: 5,
+          },
         }}
       >
-        <article>
-          <Stack spacing={{ xs: 2, md: 3 }}>
+        <article
+          style={{
+            maxWidth: 760,
+            margin: '0 auto',
+          }}
+        >
+          <Stack spacing={{ xs: 3, md: 4 }}>
             <Box>
               <Typography
                 component="h1"
                 variant="h1"
                 sx={{
-                  fontSize: { xs: '1.5rem', sm: '1.85rem', md: '2.35rem' },
+                  fontSize: {
+                    xs: '1.55rem',
+                    sm: '2rem',
+                    md: '2.35rem',
+                  },
                   fontWeight: 800,
-                  lineHeight: 1.25,
-                  mb: 1.5,
+                  lineHeight: 1.35,
+                  mb: 2,
                 }}
               >
                 {article.title}
@@ -95,7 +135,9 @@ export function ArticleDetailPage() {
                 color="text.secondary"
                 sx={{
                   fontSize: { xs: '0.95rem', md: '1rem' },
-                  lineHeight: 1.6,
+                  lineHeight: 1.8,
+                  fontWeight: 500,
+                  maxWidth: 700,
                 }}
               >
                 {article.summary}
@@ -104,8 +146,16 @@ export function ArticleDetailPage() {
 
             <Stack
               direction="row"
-              spacing={2}
-              sx={{ flexWrap: 'wrap', fontSize: '0.9rem', color: 'text.secondary' }}
+              spacing={3}
+              sx={{
+                flexWrap: 'wrap',
+                rowGap: 1,
+                pb: 2,
+                borderBottom: 1,
+                borderColor: 'divider',
+                color: 'text.secondary',
+                fontSize: '.9rem',
+              }}
             >
               {article.reporterName && (
                 <Box>
@@ -155,101 +205,219 @@ export function ArticleDetailPage() {
               )}
             </Stack>
 
-            <Box
-              sx={{
-                bgcolor: 'background.default',
-                borderRadius: 1,
-                overflow: 'hidden',
-                aspectRatio: '16 / 9',
-                minHeight: 300,
-                display: 'grid',
-                placeItems: 'center',
-              }}
-            >
-              {article.images && article.images.length > 0 ? (
+            {article.images?.length > 0 && (
+              <Box>
                 <Box
                   component="img"
                   src={article.images[0].url}
-                  alt={article.images[0].altText}
+                  alt={article.images[0].altText || article.title}
                   sx={{
                     width: '100%',
-                    height: '100%',
+                    maxHeight: 380,
                     objectFit: 'cover',
-                  }}
-                  onError={(e) => {
-                    const img = e.currentTarget as HTMLImageElement
-                    img.style.display = 'none'
+                    borderRadius: 3,
+                    display: 'block',
+                    border: '1px solid',
+                    borderColor: 'divider',
                   }}
                 />
-              ) : null}
-            </Box>
 
-            <Box
-              sx={{
-                fontSize: { xs: '0.95rem', md: '1rem' },
-                lineHeight: 1.8,
-                '& p': {
-                  mb: 1.5,
-                  textAlign: 'justify',
-                },
-              }}
-              dangerouslySetInnerHTML={{ __html: article.body }}
-            />
+                {(article.images[0].caption || article.images[0].credit) && (
+                  <Box
+                    sx={{
+                      mt: 1,
+                      px: 1,
+                    }}
+                  >
+                    {article.images[0].caption && (
+                      <Typography
+                        sx={{
+                          fontSize: '.9rem',
+                          color: 'text.primary',
+                          fontWeight: 500,
+                        }}
+                      >
+                        {article.images[0].caption}
+                      </Typography>
+                    )}
 
-            {article.images && article.images.length > 1 && (
-              <Box>
+                    {article.images[0].credit && (
+                      <Typography
+                        sx={{
+                          mt: 0.4,
+                          fontSize: '.8rem',
+                          color: 'text.secondary',
+                        }}
+                      >
+                        फोटो : {article.images[0].credit}
+                      </Typography>
+                    )}
+                  </Box>
+                )}
+              </Box>
+            )}
+            {article.youtubeVideoId && (
+              <Paper
+                elevation={0}
+                sx={{
+                  p: 2,
+                  border: 1,
+                  borderColor: 'divider',
+                  borderRadius: 3,
+                }}
+              >
                 <Typography
-                  variant="h3"
+                  variant="h6"
                   sx={{
-                    fontSize: { xs: '1.1rem', md: '1.25rem' },
                     fontWeight: 700,
                     mb: 2,
                   }}
                 >
-                  और चित्र
+                  वीडियो
                 </Typography>
-                <Stack spacing={2}>
+
+                <Box
+                  sx={{
+                    position: 'relative',
+                    paddingBottom: '56.25%',
+                    height: 0,
+                    overflow: 'hidden',
+                    borderRadius: 2,
+                    boxShadow: 2,
+                  }}
+                >
+                  <iframe
+                    src={`https://www.youtube.com/embed/${youtubeId}`}
+                    title="YouTube Video"
+                    allowFullScreen
+                    style={{
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      width: '100%',
+                      height: '100%',
+                      border: 0,
+                    }}
+                  />
+                </Box>
+              </Paper>
+            )}
+
+            <Box>
+              {article.body
+                .split('\n')
+                .filter((paragraph) => paragraph.trim() !== '')
+                .map((paragraph, index) => (
+                  <Typography
+                    key={index}
+                    component="p"
+                    sx={{
+                      mb: 2.8,
+                      fontSize: {
+                        xs: '1rem',
+                        md: '1.08rem',
+                      },
+                      lineHeight: 2,
+                      textAlign: 'justify',
+                    }}
+                  >
+                    {paragraph}
+                  </Typography>
+                ))}
+            </Box>
+
+            {article.images?.length > 1 && (
+              <Box sx={{ mt: 3 }}>
+                <Typography
+                  variant="h5"
+                  sx={{
+                    fontWeight: 800,
+                    mb: 3,
+                  }}
+                >
+                  अन्य चित्र
+                </Typography>
+
+                <Stack spacing={5}>
                   {article.images.slice(1).map((image, index) => (
-                    <Box key={index}>
+                    <Paper
+                      key={index}
+                      elevation={0}
+                      sx={{
+                        border: 1,
+                        borderColor: 'divider',
+                        borderRadius: 3,
+                        overflow: 'hidden',
+                      }}
+                    >
                       <Box
                         component="img"
                         src={image.url}
-                        alt={image.altText}
+                        alt={image.altText || article.title}
                         sx={{
                           width: '100%',
-                          maxHeight: 400,
+                          maxHeight: 360,
                           objectFit: 'cover',
-                          borderRadius: 1,
-                          mb: 1,
-                        }}
-                        onError={(e) => {
-                          const img = e.currentTarget as HTMLImageElement
-                          img.style.display = 'none'
+                          display: 'block',
                         }}
                       />
-                      {image.caption && (
-                        <Typography
-                          color="text.secondary"
-                          sx={{ fontSize: '0.85rem', fontStyle: 'italic' }}
-                        >
-                          {image.caption}
-                        </Typography>
-                      )}
-                    </Box>
+
+                      <Box sx={{ p: 2 }}>
+                        {image.caption && (
+                          <Typography
+                            sx={{
+                              fontWeight: 600,
+                              fontSize: '.95rem',
+                            }}
+                          >
+                            {image.caption}
+                          </Typography>
+                        )}
+
+                        {image.credit && (
+                          <Typography
+                            color="text.secondary"
+                            sx={{
+                              mt: 0.5,
+                              fontSize: '.82rem',
+                            }}
+                          >
+                            फोटो : {image.credit}
+                          </Typography>
+                        )}
+                      </Box>
+                    </Paper>
                   ))}
                 </Stack>
               </Box>
             )}
 
             {article.category && (
-              <Box sx={{ pt: 2, borderTop: 1, borderColor: 'divider' }}>
+              <Box
+                sx={{
+                  pt: 3,
+                  mt: 2,
+                  borderTop: 1,
+                  borderColor: 'divider',
+                }}
+              >
                 <Typography
                   component="span"
                   sx={{ fontWeight: 600, color: 'text.primary', mr: 1 }}
                 >
                   श्रेणी:
                 </Typography>
-                <Typography component="span" color="text.secondary">
+                <Typography
+                  component="span"
+                  sx={{
+                    bgcolor: 'secondary.main',
+                    color: '#fff',
+                    px: 1.5,
+                    py: 0.5,
+                    borderRadius: 10,
+                    fontWeight: 600,
+                  }}
+                >
                   {article.category}
                 </Typography>
               </Box>
@@ -299,7 +467,18 @@ function ArticleNotFound({ onRetry }: { onRetry?: () => void } = {}) {
           <Typography color="text.secondary">
             जिस खबर को आप खोलना चाहते हैं, वह अभी उपलब्ध नहीं है या हटा दी गई है।
           </Typography>
-          <Stack direction="row" spacing={2}>
+          <Stack
+            direction="row"
+            spacing={3}
+            flexWrap="wrap"
+            sx={{
+              pb: 2,
+              borderBottom: 1,
+              borderColor: 'divider',
+              color: 'text.secondary',
+              fontSize: '.9rem',
+            }}
+          >
             {onRetry && (
               <Button onClick={onRetry} variant="contained">
                 फिर से कोशिश करें

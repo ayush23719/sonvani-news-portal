@@ -25,31 +25,39 @@ import { useAuth } from '@/context/AuthContext'
 function getNavigationItems(role: 'ADMIN' | 'REPORTER' | 'PUBLIC') {
   if (role === 'ADMIN') {
     return [
-      { label: 'Dashboard', href: '/admin', icon: <DashboardIcon /> },
-      { label: 'Articles', href: '/admin/articles', icon: <ArticleIcon /> },
+      { label: 'डैशबोर्ड', href: '/admin', icon: <DashboardIcon /> },
+      { label: 'समाचार', href: '/admin/articles', icon: <ArticleIcon /> },
       {
-        label: 'Create Article',
+        label: 'नया समाचार',
         href: '/admin/articles/new',
         icon: <AddCircleOutlinedIcon />,
       },
       {
-        label: 'Users',
+        label: 'उपयोगकर्ता',
         href: '/admin/users',
         icon: <PersonIcon />,
       },
-      { label: 'Profile', href: '/admin/profile', icon: <PersonIcon /> },
+      {
+        label: 'प्रोफ़ाइल',
+        href: '/admin/profile',
+        icon: <PersonIcon />,
+      },
     ]
   }
 
   return [
-    { label: 'Dashboard', href: '/admin', icon: <DashboardIcon /> },
-    { label: 'My Articles', href: '/admin/articles', icon: <ArticleIcon /> },
+    { label: 'डैशबोर्ड', href: '/admin', icon: <DashboardIcon /> },
+    { label: 'मेरे समाचार', href: '/admin/articles', icon: <ArticleIcon /> },
     {
-      label: 'New Article',
+      label: 'नया समाचार',
       href: '/admin/articles/new',
       icon: <AddCircleOutlinedIcon />,
     },
-    { label: 'Profile', href: '/admin/profile', icon: <PersonIcon /> },
+    {
+      label: 'प्रोफ़ाइल',
+      href: '/admin/profile',
+      icon: <PersonIcon />,
+    },
   ]
 }
 
@@ -74,7 +82,7 @@ export function AdminLayout() {
     >
       <Toolbar>
         <Typography variant="h6" sx={{ fontWeight: 700 }}>
-          {user?.role === 'ADMIN' ? 'Admin Dashboard' : 'Reporter Dashboard'}
+          {user?.role === 'ADMIN' ? 'व्यवस्थापक डैशबोर्ड' : 'संवाददाता डैशबोर्ड'}
         </Typography>
       </Toolbar>
       <List sx={{ px: 1 }}>
@@ -99,7 +107,7 @@ export function AdminLayout() {
           startIcon={<LogoutIcon />}
           onClick={handleLogout}
         >
-          Logout
+          लॉगआउट
         </Button>
       </Box>
     </Box>

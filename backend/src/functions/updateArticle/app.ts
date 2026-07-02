@@ -7,6 +7,7 @@ import { validateRequiredEnvironment } from '../../shared/validation/environment
 import {
   getArticleRecordById,
   putArticleRecord,
+  extractYoutubeVideoId,
 } from '../../shared/article/articleStore.js'
 
 export const handler: APIGatewayProxyHandler = async (event) => {
@@ -59,7 +60,7 @@ export const handler: APIGatewayProxyHandler = async (event) => {
 
     article.youtubeVideoId =
       typeof body.youtubeVideoId === 'string'
-        ? body.youtubeVideoId
+        ? extractYoutubeVideoId(body.youtubeVideoId)
         : article.youtubeVideoId
 
     if (Array.isArray(body.images)) {

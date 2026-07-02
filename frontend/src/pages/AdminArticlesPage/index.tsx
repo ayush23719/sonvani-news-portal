@@ -52,10 +52,10 @@ export function AdminArticlesPage() {
         sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
       >
         <Typography variant="h4" sx={{ fontWeight: 700 }}>
-          My Articles
+          मेरे समाचार
         </Typography>
         <Button component={RouterLink} to="/admin/articles/new" variant="contained">
-          New Article
+          नया समाचार
         </Button>
       </Box>
       {isLoading && (
@@ -65,22 +65,23 @@ export function AdminArticlesPage() {
       )}
       {error && (
         <Alert severity="error">
-          Failed to load articles.<Button onClick={() => refetch()}>Retry</Button>
+          समाचार लोड नहीं हो सके।
+          <Button onClick={() => refetch()}>पुनः प्रयास करें</Button>
         </Alert>
       )}
       {!isLoading && !error && articles.length === 0 && (
-        <Alert severity="info">No articles yet.</Alert>
+        <Alert severity="info">अभी तक कोई समाचार नहीं है।</Alert>
       )}
       {!isLoading && !error && articles.length > 0 && (
         <Paper>
           <Table>
             <TableHead>
               <TableRow>
-                <TableCell>Title</TableCell>
-                <TableCell>Status</TableCell>
-                <TableCell>Category</TableCell>
-                <TableCell>Updated</TableCell>
-                <TableCell align="right">Actions</TableCell>
+                <TableCell>शीर्षक</TableCell>
+                <TableCell>स्थिति</TableCell>
+                <TableCell>श्रेणी</TableCell>
+                <TableCell>अपडेट किया गया</TableCell>
+                <TableCell align="right">कार्रवाई</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -91,7 +92,7 @@ export function AdminArticlesPage() {
                     <Chip
                       size="small"
                       color={a.status === 'PUBLISHED' ? 'success' : 'warning'}
-                      label={a.status}
+                      label={a.status === 'PUBLISHED' ? 'प्रकाशित' : 'ड्राफ्ट'}
                     />
                   </TableCell>
                   <TableCell>{a.category ?? '-'}</TableCell>
@@ -109,7 +110,7 @@ export function AdminArticlesPage() {
                         component={RouterLink}
                         to={`/admin/articles/${a.articleId}`}
                       >
-                        Edit
+                        संपादित करें
                       </Button>
                       {a.status !== 'PUBLISHED' && (
                         <Button
@@ -118,7 +119,7 @@ export function AdminArticlesPage() {
                           disabled={pub.isPending}
                           onClick={() => pub.mutate(a.articleId)}
                         >
-                          Publish
+                          प्रकाशित करें
                         </Button>
                       )}
                       <Button
@@ -126,10 +127,11 @@ export function AdminArticlesPage() {
                         color="error"
                         disabled={dele.isPending}
                         onClick={() => {
-                          if (confirm('Delete article?')) dele.mutate(a.articleId)
+                          if (confirm('क्या आप इस समाचार को हटाना चाहते हैं?'))
+                            dele.mutate(a.articleId)
                         }}
                       >
-                        Delete
+                        हटाएँ
                       </Button>
                     </Stack>
                   </TableCell>
