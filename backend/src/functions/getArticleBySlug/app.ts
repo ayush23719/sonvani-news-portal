@@ -14,7 +14,7 @@ export const handler: APIGatewayProxyHandler = async (event) => {
   try {
     validateRequiredEnvironment()
 
-    const slug = event.pathParameters?.slug?.trim()
+    const slug = decodeURIComponent(event.pathParameters?.slug?.trim() ?? '')
 
     if (!slug) {
       logger.warn('Get article by slug: missing slug parameter', {
@@ -29,7 +29,9 @@ export const handler: APIGatewayProxyHandler = async (event) => {
     })
 
     const tableName = getRequiredEnv('ARTICLES_TABLE_NAME')
-
+    logger.info('Searching article by slug', {
+      slug,
+    })
     const commandInput: QueryCommandInput = {
       TableName: tableName,
       IndexName: 'GSI_BySlug',
@@ -44,6 +46,10 @@ export const handler: APIGatewayProxyHandler = async (event) => {
     }
 
     const result = await dynamoDbDocumentClient.send(new QueryCommand(commandInput))
+    logger.info('Query returned', {
+      count: result.Count,
+      items: result.Items,
+    })
     const article = (result.Items?.[0] as Article | undefined) ?? null
 
     if (!article) {

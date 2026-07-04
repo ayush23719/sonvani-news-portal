@@ -31,7 +31,7 @@ export const handler: APIGatewayProxyHandler = async (event) => {
       },
       { createdBy, status: 'DRAFT' },
     )
-
+    console.log('ARTICLE RECORD:', JSON.stringify(articleRecord, null, 2))
     await putArticleRecord(tableName, articleRecord)
 
     logger.info('Article created', {

@@ -41,10 +41,16 @@ export function normalizeArticleInput(
   const category = input.category?.trim() || 'General'
   const categorySlug = input.categorySlug?.trim() || slugify(category)
   const district = input.district?.trim()
+
   const districtSlug =
-    input.districtSlug?.trim() || (district ? slugify(district) : undefined)
+    input.districtSlug?.trim() ||
+    (district ? slugify(district) || encodeURIComponent(district) : undefined)
+
   const state = input.state?.trim()
-  const stateSlug = input.stateSlug?.trim() || (state ? slugify(state) : undefined)
+
+  const stateSlug =
+    input.stateSlug?.trim() ||
+    (state ? slugify(state) || encodeURIComponent(state) : undefined)
   const slug = normalizeSlug(input.slug, title)
   const images = normalizeImages(input.images)
   const now = new Date().toISOString()
@@ -229,20 +235,28 @@ function normalizeSeo(seo?: SeoMetadata): SeoMetadata | undefined {
 
 function normalizeSlug(slug: string | undefined, fallbackTitle: string): string {
   const trimmedValue = slug?.trim()
+
   if (trimmedValue) {
     return trimmedValue
   }
 
-  return slugify(fallbackTitle)
+  const generatedSlug = slugify(fallbackTitle)
+
+  if (generatedSlug) {
+    return generatedSlug
+  }
+
+  return randomUUID()
 }
 
 function slugify(value: string): string {
   return value
+    .trim()
     .toLowerCase()
-    .normalize('NFKD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/(^-|-$)/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/[^\p{L}\p{N}-]/gu, '')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '')
 }
 
 export function extractYoutubeVideoId(value?: string): string | undefined {
