@@ -2,6 +2,20 @@ import { env } from '@/config/env'
 
 const BASE_URL = env.apiBaseUrl.replace(/\/$/, '')
 
+let sessionExpiredShown = false
+
+function handleUnauthorized() {
+  if (sessionExpiredShown) return
+
+  sessionExpiredShown = true
+
+  alert('आपका लॉगिन सत्र समाप्त हो गया है।\n\nकृपया दोबारा लॉगिन करें।')
+
+  localStorage.clear()
+
+  window.location.href = '/login'
+}
+
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   if (!BASE_URL) {
     throw new Error('VITE_API_BASE_URL is not configured.')
@@ -15,6 +29,11 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
     },
     ...options,
   })
+
+  if (response.status === 401) {
+    handleUnauthorized()
+    throw new Error('Unauthorized')
+  }
 
   const body = await response.json().catch(() => null)
 

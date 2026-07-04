@@ -14,6 +14,7 @@ import {
   Typography,
 } from '@mui/material'
 import { useMemo, useState } from 'react'
+import HomeIcon from '@mui/icons-material/Home'
 import { Link as RouterLink, Outlet, useNavigate } from 'react-router-dom'
 import DashboardIcon from '@mui/icons-material/Dashboard'
 import ArticleIcon from '@mui/icons-material/Article'
@@ -85,6 +86,16 @@ export function AdminLayout() {
           {user?.role === 'ADMIN' ? 'व्यवस्थापक डैशबोर्ड' : 'संवाददाता डैशबोर्ड'}
         </Typography>
       </Toolbar>
+      <Box sx={{ px: 2, pb: 1 }}>
+        <Button
+          fullWidth
+          variant="contained"
+          startIcon={<HomeIcon />}
+          onClick={() => window.open('/', '_blank')}
+        >
+          वेबसाइट देखें
+        </Button>
+      </Box>
       <List sx={{ px: 1 }}>
         {navigationItems.map((item) => (
           <ListItemButton
@@ -102,8 +113,8 @@ export function AdminLayout() {
       <Box sx={{ px: 2, pb: 2, mt: 'auto' }}>
         <Button
           fullWidth
-          variant="outlined"
-          color="secondary"
+          variant="contained"
+          color="error"
           startIcon={<LogoutIcon />}
           onClick={handleLogout}
         >

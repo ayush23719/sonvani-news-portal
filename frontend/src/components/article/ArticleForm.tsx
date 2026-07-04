@@ -88,6 +88,15 @@ export function ArticleForm({ mode, articleId }: ArticleFormProps) {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   const navigate = useNavigate()
+  const cancelEditing = () => {
+    const confirmed = window.confirm('क्या आप बिना सहेजे वापस जाना चाहते हैं?')
+
+    if (!confirmed) {
+      return
+    }
+
+    navigate('/admin/articles')
+  }
 
   useEffect(() => {
     if (mode !== 'edit' || !articleId) {
@@ -567,6 +576,20 @@ export function ArticleForm({ mode, articleId }: ArticleFormProps) {
                             setForm((prev) => ({ ...prev, images }))
                           }}
                         />
+                        <Button
+                          color="error"
+                          variant="outlined"
+                          onClick={() => {
+                            const images = form.images.filter((_, i) => i !== index)
+
+                            setForm((prev) => ({
+                              ...prev,
+                              images,
+                            }))
+                          }}
+                        >
+                          चित्र हटाएँ
+                        </Button>
                       </Stack>
                     </CardContent>
                   </Card>
@@ -579,22 +602,34 @@ export function ArticleForm({ mode, articleId }: ArticleFormProps) {
             <Box
               sx={{
                 display: 'flex',
-                justifyContent: 'flex-end',
+                justifyContent: 'space-between',
+                alignItems: 'center',
                 gap: 2,
                 flexWrap: 'wrap',
               }}
             >
-              <Button variant="outlined" disabled={saving} onClick={saveDraft}>
-                ड्राफ्ट सहेजें
+              <Button
+                color="inherit"
+                variant="outlined"
+                disabled={saving}
+                onClick={cancelEditing}
+              >
+                रद्द करें
               </Button>
 
-              <Button variant="contained" disabled={saving} onClick={publish}>
-                {saving ? (
-                  <CircularProgress size={22} color="inherit" />
-                ) : (
-                  'प्रकाशित करें'
-                )}
-              </Button>
+              <Stack direction="row" spacing={2}>
+                <Button variant="outlined" disabled={saving} onClick={saveDraft}>
+                  ड्राफ्ट सहेजें
+                </Button>
+
+                <Button variant="contained" disabled={saving} onClick={publish}>
+                  {saving ? (
+                    <CircularProgress size={22} color="inherit" />
+                  ) : (
+                    'प्रकाशित करें'
+                  )}
+                </Button>
+              </Stack>
             </Box>
           </Stack>
         </CardContent>
