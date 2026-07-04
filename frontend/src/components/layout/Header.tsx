@@ -30,7 +30,7 @@ export function Header() {
           borderBottom: 1,
           borderColor: 'divider',
           overflowX: 'hidden',
-          zIndex: (theme) => theme.zIndex.drawer + 1,
+          zIndex: (theme) => theme.zIndex.appBar,
         }}
       >
         <Container>
