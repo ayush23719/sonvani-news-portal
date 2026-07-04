@@ -115,7 +115,13 @@ export function AdminArticlesPage() {
                     </TableCell>
 
                     <TableCell align="right">
-                      <Stack direction="row" spacing={1} justifyContent="flex-end">
+                      <Stack
+                        direction="row"
+                        spacing={1}
+                        sx={{
+                          justifyContent: 'flex-end',
+                        }}
+                      >
                         <Button
                           size="small"
                           component={RouterLink}
@@ -165,7 +171,12 @@ export function AdminArticlesPage() {
               <Card key={a.articleId + '-' + a.status}>
                 <CardContent>
                   <Stack spacing={2}>
-                    <Typography fontWeight={700} fontSize="1rem">
+                    <Typography
+                      sx={{
+                        fontWeight: 700,
+                        fontSize: '1rem',
+                      }}
+                    >
                       {a.title}
                     </Typography>
 
@@ -179,11 +190,16 @@ export function AdminArticlesPage() {
                     <Divider />
 
                     <Typography variant="body2">
-                      <strong>श्रेणी:</strong> {a.category ?? '-'}
+                      <Box component="span" sx={{ fontWeight: 700 }}>
+                        श्रेणी:
+                      </Box>{' '}
+                      {a.category ?? '-'}
                     </Typography>
 
                     <Typography variant="body2">
-                      <strong>अपडेट:</strong>{' '}
+                      <Box component="span" sx={{ fontWeight: 700 }}>
+                        अपडेट:
+                      </Box>{' '}
                       {new Date(a.updatedAt ?? a.publishDate ?? '').toLocaleString()}
                     </Typography>
 
