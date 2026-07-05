@@ -99,18 +99,27 @@ function toNewsItem(article: ApiArticleSummary): NewsItem {
     title: article.title,
     summary: article.summary,
     href: `/articles/${article.slug}`,
+
     category: article.category,
     categorySlug: article.categorySlug,
+
     district: article.district,
     state: article.state,
+
     publishedAt: formatPublishedTime(article.publishDate),
+
+    imageUrl:
+      article.primaryImage?.url ??
+      article.images?.find((img) => img.isPrimary)?.url ??
+      article.images?.[0]?.url,
+
     imageLabel: article.category,
     imageTone: 'navy',
+
     isBreaking: article.isBreaking,
     isFeatured: article.isFeatured,
   }
 }
-
 function formatPublishedTime(value: string): string {
   return new Intl.DateTimeFormat('hi-IN', {
     hour: 'numeric',
