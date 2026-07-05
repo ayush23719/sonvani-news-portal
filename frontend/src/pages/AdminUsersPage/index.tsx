@@ -6,11 +6,11 @@ import {
   CardContent,
   CircularProgress,
   Dialog,
+  Table,
   DialogActions,
   DialogContent,
   DialogTitle,
   Stack,
-  Table,
   TableBody,
   TableCell,
   TableHead,
@@ -18,7 +18,9 @@ import {
   TextField,
   Typography,
 } from '@mui/material'
+import { useTheme, useMediaQuery, Divider } from '@mui/material'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { TableContainer } from '@mui/material'
 import Chip from '@mui/material/Chip'
 import { useState } from 'react'
 import {
@@ -116,17 +118,36 @@ export function AdminUsersPage() {
   })
 
   const users = data?.data.users ?? []
-
+  const theme = useTheme()
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
   return (
     <Stack spacing={3}>
       <Box
         sx={{
           display: 'flex',
+          flexDirection: {
+            xs: 'column',
+            sm: 'row',
+          },
           justifyContent: 'space-between',
-          alignItems: 'center',
+          alignItems: {
+            xs: 'stretch',
+            sm: 'center',
+          },
+          gap: 2,
         }}
       >
-        <Typography variant="h4" sx={{ fontWeight: 700 }}>
+        <Typography
+          variant="h4"
+          sx={{
+            fontWeight: 700,
+            fontSize: {
+              xs: '1.2rem',
+              sm: '1.5rem',
+              md: '2rem',
+            },
+          }}
+        >
           उपयोगकर्ता प्रबंधन
         </Typography>
 
@@ -134,6 +155,12 @@ export function AdminUsersPage() {
           variant="contained"
           disabled={create.isPending}
           onClick={() => setOpen(true)}
+          sx={{
+            alignSelf: {
+              xs: 'flex-start',
+              sm: 'auto',
+            },
+          }}
         >
           रिपोर्टर जोड़ें
         </Button>
@@ -152,106 +179,242 @@ export function AdminUsersPage() {
         </Alert>
       )}
 
-      {!isLoading && (
-        <Card>
-          <CardContent>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell>ईमेल</TableCell>
+      {!isLoading &&
+        (isMobile ? (
+          <Stack spacing={2}>
+            {users.map((user) => (
+              <Card key={user.username}>
+                <CardContent>
+                  <Stack spacing={2}>
+                    <Box>
+                      <Typography variant="h6" sx={{ fontWeight: 700 }}>
+                        {user.name}
+                      </Typography>
 
-                  <TableCell>नाम</TableCell>
+                      <Typography color="text.secondary">{user.email}</Typography>
+                    </Box>
 
-                  <TableCell>स्थिति</TableCell>
+                    <Divider />
 
-                  <TableCell>सक्रिय</TableCell>
+                    <Box>
+                      <Typography variant="caption" color="text.secondary">
+                        स्थिति
+                      </Typography>
 
-                  <TableCell align="right">कार्रवाई</TableCell>
-                </TableRow>
-              </TableHead>
+                      <Typography>{getStatusLabel(user.status)}</Typography>
+                    </Box>
 
-              <TableBody>
-                {users.map((user) => (
-                  <TableRow key={user.username}>
-                    <TableCell>{user.email}</TableCell>
-                    <TableCell>{user.name}</TableCell>
-                    <TableCell>{getStatusLabel(user.status)}</TableCell>
-                    <TableCell>
-                      <Chip
-                        size="small"
-                        color={user.enabled ? 'success' : 'default'}
-                        label={user.enabled ? 'हाँ' : 'नहीं'}
-                      />
-                    </TableCell>
-                    <TableCell align="right">
-                      <Box
-                        sx={{
-                          display: 'flex',
-                          gap: 1,
-                          justifyContent: 'flex-end',
-                          flexWrap: 'wrap',
+                    <Box>
+                      <Typography variant="caption" color="text.secondary">
+                        सक्रिय
+                      </Typography>
+
+                      <Box sx={{ mt: 1 }}>
+                        <Chip
+                          size="small"
+                          color={user.enabled ? 'success' : 'default'}
+                          label={user.enabled ? 'हाँ' : 'नहीं'}
+                        />
+                      </Box>
+                    </Box>
+
+                    <Divider />
+
+                    <Stack spacing={1}>
+                      {user.enabled ? (
+                        <Button
+                          variant="outlined"
+                          color="warning"
+                          onClick={() => disable.mutate(user.username)}
+                        >
+                          अक्षम करें
+                        </Button>
+                      ) : (
+                        <Button
+                          variant="outlined"
+                          color="success"
+                          onClick={() => enable.mutate(user.username)}
+                        >
+                          सक्षम करें
+                        </Button>
+                      )}
+
+                      <Button
+                        variant="outlined"
+                        onClick={() => {
+                          const password = prompt(
+                            'अस्थायी पासवर्ड दर्ज करें',
+                            'Temp@12345',
+                          )
+
+                          if (!password) return
+
+                          tempPassword.mutate({
+                            username: user.username,
+                            password,
+                          })
                         }}
                       >
-                        {user.enabled ? (
-                          <Button
-                            size="small"
-                            color="warning"
-                            disabled={disable.isPending}
-                            onClick={() => disable.mutate(user.username)}
-                          >
-                            अक्षम करें
-                          </Button>
-                        ) : (
-                          <Button
-                            size="small"
-                            color="success"
-                            disabled={enable.isPending}
-                            onClick={() => enable.mutate(user.username)}
-                          >
-                            सक्षम करें
-                          </Button>
-                        )}
+                        अस्थायी पासवर्ड सेट करें
+                      </Button>
 
-                        <Button
-                          size="small"
-                          onClick={() => {
-                            const password = prompt(
-                              'अस्थायी पासवर्ड दर्ज करें',
-                              'Temp@12345',
-                            )
+                      <Button
+                        variant="outlined"
+                        color="error"
+                        onClick={() => {
+                          if (confirm(`क्या आप ${user.email} को हटाना चाहते हैं?`)) {
+                            remove.mutate(user.username)
+                          }
+                        }}
+                      >
+                        हटाएँ
+                      </Button>
+                    </Stack>
+                  </Stack>
+                </CardContent>
+              </Card>
+            ))}
+          </Stack>
+        ) : (
+          <Card>
+            <CardContent sx={{ p: { xs: 1, sm: 2 } }}>
+              <TableContainer
+                sx={{
+                  overflowX: 'auto',
+                }}
+              >
+                <Table
+                  size="small"
+                  sx={{
+                    minWidth: {
+                      xs: 500,
+                      sm: 700,
+                    },
+                  }}
+                >
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>ईमेल</TableCell>
 
-                            if (!password) return
+                      <TableCell>नाम</TableCell>
 
-                            tempPassword.mutate({
-                              username: user.username,
-                              password,
-                            })
+                      <TableCell>स्थिति</TableCell>
+
+                      <TableCell>सक्रिय</TableCell>
+
+                      <TableCell align="right">कार्रवाई</TableCell>
+                    </TableRow>
+                  </TableHead>
+
+                  <TableBody>
+                    {users.map((user) => (
+                      <TableRow key={user.username}>
+                        <TableCell
+                          sx={{
+                            maxWidth: 220,
+                            wordBreak: 'break-word',
                           }}
                         >
-                          अस्थायी पासवर्ड सेट करें
-                        </Button>
-
-                        <Button
-                          size="small"
-                          color="error"
-                          disabled={remove.isPending}
-                          onClick={() => {
-                            if (confirm(`क्या आप ${user.email} को हटाना चाहते हैं?`)) {
-                              remove.mutate(user.username)
-                            }
+                          {user.email}
+                        </TableCell>
+                        <TableCell
+                          sx={{
+                            whiteSpace: 'nowrap',
                           }}
                         >
-                          हटाएँ
-                        </Button>
-                      </Box>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-      )}
+                          {user.name}
+                        </TableCell>
+                        <TableCell>{getStatusLabel(user.status)}</TableCell>
+                        <TableCell>
+                          <Chip
+                            size="small"
+                            color={user.enabled ? 'success' : 'default'}
+                            label={user.enabled ? 'हाँ' : 'नहीं'}
+                          />
+                        </TableCell>
+                        <TableCell align="right">
+                          <Box
+                            sx={{
+                              display: 'flex',
+                              flexDirection: {
+                                xs: 'column',
+                                sm: 'row',
+                              },
+                              alignItems: {
+                                xs: 'stretch',
+                                sm: 'center',
+                              },
+                              justifyContent: 'flex-end',
+                              gap: 1,
+                              minWidth: {
+                                xs: 140,
+                                sm: 'auto',
+                              },
+                            }}
+                          >
+                            {user.enabled ? (
+                              <Button
+                                size="small"
+                                color="warning"
+                                disabled={disable.isPending}
+                                onClick={() => disable.mutate(user.username)}
+                              >
+                                अक्षम करें
+                              </Button>
+                            ) : (
+                              <Button
+                                size="small"
+                                color="success"
+                                disabled={enable.isPending}
+                                onClick={() => enable.mutate(user.username)}
+                              >
+                                सक्षम करें
+                              </Button>
+                            )}
+
+                            <Button
+                              size="small"
+                              onClick={() => {
+                                const password = prompt(
+                                  'अस्थायी पासवर्ड दर्ज करें',
+                                  'Temp@12345',
+                                )
+
+                                if (!password) return
+
+                                tempPassword.mutate({
+                                  username: user.username,
+                                  password,
+                                })
+                              }}
+                            >
+                              अस्थायी पासवर्ड सेट करें
+                            </Button>
+
+                            <Button
+                              size="small"
+                              color="error"
+                              disabled={remove.isPending}
+                              onClick={() => {
+                                if (
+                                  confirm(`क्या आप ${user.email} को हटाना चाहते हैं?`)
+                                ) {
+                                  remove.mutate(user.username)
+                                }
+                              }}
+                            >
+                              हटाएँ
+                            </Button>
+                          </Box>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            </CardContent>
+          </Card>
+        ))}
 
       <Dialog open={open} onClose={() => setOpen(false)} maxWidth="sm" fullWidth>
         <DialogTitle>नया रिपोर्टर जोड़ें</DialogTitle>
