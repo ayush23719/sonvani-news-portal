@@ -18,6 +18,7 @@ type UserRole = 'ADMIN' | 'REPORTER' | 'PUBLIC'
 
 type AuthUser = {
   username: string
+  name?: string
   email?: string
   role: UserRole
   idToken: string
@@ -65,12 +66,15 @@ function decodeJwtPayload(token: string): Record<string, unknown> {
   }
 
   const normalizedPayload = payload.replace(/-/g, '+').replace(/_/g, '/')
+
   const paddedPayload = normalizedPayload.padEnd(
     normalizedPayload.length + ((4 - (normalizedPayload.length % 4)) % 4),
     '=',
   )
 
-  return JSON.parse(window.atob(paddedPayload)) as Record<string, unknown>
+  const bytes = Uint8Array.from(window.atob(paddedPayload), (char) => char.charCodeAt(0))
+
+  return JSON.parse(new TextDecoder().decode(bytes))
 }
 
 function normalizeRole(value: unknown): UserRole {
@@ -162,6 +166,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       const nextUser: AuthUser = {
         username: cognitoUser.getUsername(),
+        name: typeof claims.name === 'string' ? claims.name : undefined,
         email: typeof claims.email === 'string' ? claims.email : undefined,
         role: resolveRole(claims),
         idToken,
@@ -195,6 +200,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           const claims = decodeJwtPayload(idToken)
           const nextUser: AuthUser = {
             username,
+            name: typeof claims.name === 'string' ? claims.name : undefined,
             email: typeof claims.email === 'string' ? claims.email : undefined,
             role: resolveRole(claims),
             idToken,
@@ -240,6 +246,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
             const nextUser: AuthUser = {
               username: pendingCognitoUser.getUsername(),
+              name: typeof claims.name === 'string' ? claims.name : undefined,
               email: typeof claims.email === 'string' ? claims.email : undefined,
               role: resolveRole(claims),
               idToken,

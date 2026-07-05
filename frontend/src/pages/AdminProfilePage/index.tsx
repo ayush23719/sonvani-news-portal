@@ -3,15 +3,17 @@ import { useAuth } from '@/context/AuthContext'
 
 export function AdminProfilePage() {
   const { user } = useAuth()
-
+  console.log(user)
+  console.log(user?.name)
   return (
     <Stack spacing={3}>
       <Box>
         <Typography variant="h4" sx={{ fontWeight: 700 }}>
-          Profile
+          आपका प्रोफ़ाइल
         </Typography>
         <Typography variant="body1" color="text.secondary" sx={{ mt: 1 }}>
-          Your current session details are shown below.
+          आपका उपयोगकर्ता नाम और भूमिका नीचे दी गई है। यदि आपको अपनी भूमिका बदलने की
+          आवश्यकता है, तो कृपया व्यवस्थापक से संपर्क करें।
         </Typography>
       </Box>
 
@@ -19,11 +21,11 @@ export function AdminProfilePage() {
         <CardContent>
           <Stack spacing={1.5}>
             <Typography variant="body2" color="text.secondary">
-              Username
+              नाम
             </Typography>
-            <Typography variant="body1">{user?.username ?? 'Not available'}</Typography>
+            <Typography variant="body1">{user?.name ?? 'Not available'}</Typography>
             <Typography variant="body2" color="text.secondary">
-              Role
+              भूमिका
             </Typography>
             <Typography variant="body1">{user?.role ?? 'PUBLIC'}</Typography>
           </Stack>

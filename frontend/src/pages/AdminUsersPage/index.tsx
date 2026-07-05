@@ -19,7 +19,7 @@ import {
   Typography,
 } from '@mui/material'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-
+import Chip from '@mui/material/Chip'
 import { useState } from 'react'
 import {
   createReporter,
@@ -130,7 +130,11 @@ export function AdminUsersPage() {
           उपयोगकर्ता प्रबंधन
         </Typography>
 
-        <Button variant="contained" onClick={() => setOpen(true)}>
+        <Button
+          variant="contained"
+          disabled={create.isPending}
+          onClick={() => setOpen(true)}
+        >
           रिपोर्टर जोड़ें
         </Button>
       </Box>
@@ -172,14 +176,20 @@ export function AdminUsersPage() {
                     <TableCell>{user.email}</TableCell>
                     <TableCell>{user.name}</TableCell>
                     <TableCell>{getStatusLabel(user.status)}</TableCell>
-                    <TableCell>{user.enabled ? 'हाँ' : 'नहीं'}</TableCell>
-
+                    <TableCell>
+                      <Chip
+                        size="small"
+                        color={user.enabled ? 'success' : 'default'}
+                        label={user.enabled ? 'हाँ' : 'नहीं'}
+                      />
+                    </TableCell>
                     <TableCell align="right">
                       <Box
                         sx={{
                           display: 'flex',
-                          justifyContent: 'space-between',
-                          gap: 2,
+                          gap: 1,
+                          justifyContent: 'flex-end',
+                          flexWrap: 'wrap',
                         }}
                       >
                         {user.enabled ? (
@@ -253,13 +263,20 @@ export function AdminUsersPage() {
               value={name}
               onChange={(e) => setName(e.target.value)}
               fullWidth
+              required
             />
 
             <TextField
+              fullWidth
+              required
+              type="email"
               label="ईमेल"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              fullWidth
+              error={Boolean(email) && !/\S+@\S+\.\S+/.test(email)}
+              helperText={
+                Boolean(email) && !/\S+@\S+\.\S+/.test(email) ? 'सही ईमेल दर्ज करें' : ''
+              }
             />
           </Stack>
         </DialogContent>
@@ -269,7 +286,12 @@ export function AdminUsersPage() {
 
           <Button
             variant="contained"
-            disabled={create.isPending}
+            disabled={
+              create.isPending ||
+              !name.trim() ||
+              !email.trim() ||
+              !/\S+@\S+\.\S+/.test(email)
+            }
             onClick={() =>
               create.mutate({
                 name,
