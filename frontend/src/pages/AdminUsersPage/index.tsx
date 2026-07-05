@@ -32,6 +32,7 @@ import {
 
 type User = {
   username: string
+  name: string
   email: string
   enabled: boolean
   status: string
@@ -43,7 +44,33 @@ type Response = {
     users: User[]
   }
 }
+function getStatusLabel(status: string) {
+  switch (status) {
+    case 'CONFIRMED':
+      return 'सक्रिय'
 
+    case 'FORCE_CHANGE_PASSWORD':
+      return 'पहली बार लॉगिन शेष'
+
+    case 'RESET_REQUIRED':
+      return 'पासवर्ड रीसेट आवश्यक'
+
+    case 'UNCONFIRMED':
+      return 'पुष्टि लंबित'
+
+    case 'ARCHIVED':
+      return 'संग्रहित'
+
+    case 'COMPROMISED':
+      return 'सुरक्षा जोखिम'
+
+    case 'UNKNOWN':
+      return 'अज्ञात'
+
+    default:
+      return status
+  }
+}
 export function AdminUsersPage() {
   const queryClient = useQueryClient()
 
@@ -100,20 +127,24 @@ export function AdminUsersPage() {
         }}
       >
         <Typography variant="h4" sx={{ fontWeight: 700 }}>
-          Users
+          उपयोगकर्ता प्रबंधन
         </Typography>
 
         <Button variant="contained" onClick={() => setOpen(true)}>
-          Add Reporter
+          रिपोर्टर जोड़ें
         </Button>
       </Box>
 
-      {isLoading && <CircularProgress />}
+      {isLoading && (
+        <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
+          <CircularProgress />
+        </Box>
+      )}
 
       {error && (
         <Alert severity="error">
-          Failed to load users.
-          <Button onClick={() => refetch()}>Retry</Button>
+          उपयोगकर्ता लोड नहीं हो सके।
+          <Button onClick={() => refetch()}>पुनः प्रयास करें</Button>
         </Alert>
       )}
 
@@ -123,11 +154,15 @@ export function AdminUsersPage() {
             <Table>
               <TableHead>
                 <TableRow>
-                  <TableCell>Email</TableCell>
-                  <TableCell>Username</TableCell>
-                  <TableCell>Status</TableCell>
-                  <TableCell>Enabled</TableCell>
-                  <TableCell align="right">Actions</TableCell>
+                  <TableCell>ईमेल</TableCell>
+
+                  <TableCell>नाम</TableCell>
+
+                  <TableCell>स्थिति</TableCell>
+
+                  <TableCell>सक्रिय</TableCell>
+
+                  <TableCell align="right">कार्रवाई</TableCell>
                 </TableRow>
               </TableHead>
 
@@ -135,9 +170,9 @@ export function AdminUsersPage() {
                 {users.map((user) => (
                   <TableRow key={user.username}>
                     <TableCell>{user.email}</TableCell>
-                    <TableCell>{user.username}</TableCell>
-                    <TableCell>{user.status}</TableCell>
-                    <TableCell>{user.enabled ? 'Yes' : 'No'}</TableCell>
+                    <TableCell>{user.name}</TableCell>
+                    <TableCell>{getStatusLabel(user.status)}</TableCell>
+                    <TableCell>{user.enabled ? 'हाँ' : 'नहीं'}</TableCell>
 
                     <TableCell align="right">
                       <Box
@@ -154,7 +189,7 @@ export function AdminUsersPage() {
                             disabled={disable.isPending}
                             onClick={() => disable.mutate(user.username)}
                           >
-                            Disable
+                            अक्षम करें
                           </Button>
                         ) : (
                           <Button
@@ -163,14 +198,17 @@ export function AdminUsersPage() {
                             disabled={enable.isPending}
                             onClick={() => enable.mutate(user.username)}
                           >
-                            Enable
+                            सक्षम करें
                           </Button>
                         )}
 
                         <Button
                           size="small"
                           onClick={() => {
-                            const password = prompt('Temporary Password', 'Temp@12345')
+                            const password = prompt(
+                              'अस्थायी पासवर्ड दर्ज करें',
+                              'Temp@12345',
+                            )
 
                             if (!password) return
 
@@ -180,7 +218,7 @@ export function AdminUsersPage() {
                             })
                           }}
                         >
-                          Set Temp Password
+                          अस्थायी पासवर्ड सेट करें
                         </Button>
 
                         <Button
@@ -188,12 +226,12 @@ export function AdminUsersPage() {
                           color="error"
                           disabled={remove.isPending}
                           onClick={() => {
-                            if (confirm(`Delete ${user.email}?`)) {
+                            if (confirm(`क्या आप ${user.email} को हटाना चाहते हैं?`)) {
                               remove.mutate(user.username)
                             }
                           }}
                         >
-                          Delete
+                          हटाएँ
                         </Button>
                       </Box>
                     </TableCell>
@@ -206,19 +244,19 @@ export function AdminUsersPage() {
       )}
 
       <Dialog open={open} onClose={() => setOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>Add Reporter</DialogTitle>
+        <DialogTitle>नया रिपोर्टर जोड़ें</DialogTitle>
 
         <DialogContent>
           <Stack spacing={2} sx={{ mt: 1 }}>
             <TextField
-              label="Name"
+              label="नाम"
               value={name}
               onChange={(e) => setName(e.target.value)}
               fullWidth
             />
 
             <TextField
-              label="Email"
+              label="ईमेल"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               fullWidth
@@ -227,7 +265,7 @@ export function AdminUsersPage() {
         </DialogContent>
 
         <DialogActions>
-          <Button onClick={() => setOpen(false)}>Cancel</Button>
+          <Button onClick={() => setOpen(false)}>रद्द करें</Button>
 
           <Button
             variant="contained"
@@ -239,7 +277,7 @@ export function AdminUsersPage() {
               })
             }
           >
-            Create
+            बनाएँ
           </Button>
         </DialogActions>
       </Dialog>

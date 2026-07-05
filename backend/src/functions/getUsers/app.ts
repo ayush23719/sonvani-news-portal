@@ -20,9 +20,10 @@ export const handler: APIGatewayProxyHandler = async (event) => {
     const users =
       result.Users?.map((user) => ({
         username: user.Username,
+        name: user.Attributes?.find((a) => a.Name === 'name')?.Value ?? '',
         enabled: user.Enabled,
         status: user.UserStatus,
-        email: user.Attributes?.find((a) => a.Name === 'email')?.Value,
+        email: user.Attributes?.find((a) => a.Name === 'email')?.Value ?? '',
       })) ?? []
 
     return successResponse({ users }, requestId)
