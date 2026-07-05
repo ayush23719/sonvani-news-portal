@@ -81,7 +81,9 @@ async function fetchListing(
   }
 
   const response = await getJson<ApiResponse<ListingApiResponse>>(
-    `/api/v1/${kind === 'category' ? 'categories' : kind === 'district' ? 'districts' : 'states'}/${slug}/articles?${query.toString()}`,
+    `/${
+      kind === 'category' ? 'categories' : kind === 'district' ? 'districts' : 'states'
+    }/${slug}/articles?${query.toString()}`,
   )
 
   if (!response.success || !response.data) {

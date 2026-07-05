@@ -37,7 +37,17 @@ const CATEGORY_SLUGS: Record<string, string> = {
   बिजनेस: 'business',
   वीडियो: 'video',
 }
-
+const CATEGORY_SLUG_MAP: Record<string, string> = {
+  जनरल: 'latest',
+  देश: 'desh',
+  क्राइम: 'crime',
+  खेल: 'khel',
+  राजनीति: 'rajniti',
+  धर्म: 'dharm',
+  स्वास्थ्य: 'swasthya',
+  बिजनेस: 'business',
+  वीडियो: 'video',
+}
 export function normalizeArticleInput(
   input: ArticleWriteInput,
   defaults: { createdBy?: string; status?: ArticleStatus },

@@ -38,11 +38,25 @@ export const handler: APIGatewayProxyHandler = async (event) => {
 
     article.slug = typeof body.slug === 'string' ? body.slug : article.slug
 
-    article.category =
-      typeof body.category === 'string' ? body.category : article.category
+    if (typeof body.category === 'string') {
+      article.category = body.category
 
-    article.categorySlug =
-      typeof body.categorySlug === 'string' ? body.categorySlug : article.categorySlug
+      const CATEGORY_SLUG_MAP: Record<string, string> = {
+        जनरल: 'latest',
+        देश: 'desh',
+        क्राइम: 'crime',
+        खेल: 'khel',
+        राजनीति: 'rajniti',
+        धर्म: 'dharm',
+        स्वास्थ्य: 'swasthya',
+        बिजनेस: 'business',
+        वीडियो: 'video',
+      }
+
+      article.categorySlug =
+        CATEGORY_SLUG_MAP[body.category] ??
+        body.category.trim().toLowerCase().replace(/\s+/g, '-')
+    }
 
     article.district =
       typeof body.district === 'string' ? body.district : article.district
