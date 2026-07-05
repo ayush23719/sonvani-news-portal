@@ -26,6 +26,17 @@ export type ArticleTableRecord = Article & {
   featuredPartition?: 'FEATURED'
   seo?: SeoMetadata
 }
+const CATEGORY_SLUGS: Record<string, string> = {
+  जनरल: 'general',
+  देश: 'desh',
+  क्राइम: 'crime',
+  खेल: 'khel',
+  राजनीति: 'rajniti',
+  धर्म: 'dharm',
+  स्वास्थ्य: 'swasthya',
+  बिजनेस: 'business',
+  वीडियो: 'video',
+}
 
 export function normalizeArticleInput(
   input: ArticleWriteInput,
@@ -38,8 +49,10 @@ export function normalizeArticleInput(
 
   const summary = input.summary?.trim() ?? ''
   const body = input.body?.trim() ?? ''
-  const category = input.category?.trim() || 'General'
-  const categorySlug = input.categorySlug?.trim() || slugify(category)
+  const category = input.category?.trim() || 'जनरल'
+
+  const categorySlug =
+    input.categorySlug?.trim() ?? CATEGORY_SLUGS[category] ?? slugify(category)
   const district = input.district?.trim()
 
   const districtSlug =
