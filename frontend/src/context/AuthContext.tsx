@@ -86,21 +86,29 @@ function normalizeRole(value: unknown): UserRole {
 
 function resolveRole(claims: Record<string, unknown>): UserRole {
   const groups = claims['cognito:groups']
+
   if (Array.isArray(groups)) {
-    const groupValue = groups.find((group) => typeof group === 'string')
-    if (groupValue) {
-      return normalizeRole(groupValue)
+    const normalized = groups
+      .filter((group): group is string => typeof group === 'string')
+      .map((group) => group.toUpperCase())
+
+    if (normalized.includes('ADMIN')) {
+      return 'ADMIN'
+    }
+
+    if (normalized.includes('REPORTER')) {
+      return 'REPORTER'
     }
   }
 
   const customRole = claims['custom:role']
+
   if (typeof customRole === 'string') {
     return normalizeRole(customRole)
   }
 
   return 'PUBLIC'
 }
-
 function readStoredUser(): AuthUser | null {
   if (typeof window === 'undefined') {
     return null
@@ -127,11 +135,44 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [pendingCognitoUser, setPendingCognitoUser] = useState<CognitoUser | null>(null)
 
   useEffect(() => {
-    const storedUser = readStoredUser()
-    if (storedUser) {
-      setUser(storedUser)
+    const userPool = getUserPool()
+    const cognitoUser = userPool.getCurrentUser()
+
+    if (!cognitoUser) {
+      window.localStorage.removeItem(STORAGE_KEY)
+      setUser(null)
+      setIsLoading(false)
+      return
     }
-    setIsLoading(false)
+
+    cognitoUser.getSession((err, session) => {
+      if (err || !session?.isValid()) {
+        cognitoUser.signOut()
+        window.localStorage.removeItem(STORAGE_KEY)
+        setUser(null)
+        setIsLoading(false)
+        return
+      }
+
+      const idToken = session.getIdToken().getJwtToken()
+      const accessToken = session.getAccessToken().getJwtToken()
+      const refreshToken = session.getRefreshToken()?.getToken()
+
+      const claims = decodeJwtPayload(idToken)
+
+      const nextUser: AuthUser = {
+        username: cognitoUser.getUsername(),
+        email: typeof claims.email === 'string' ? claims.email : undefined,
+        role: resolveRole(claims),
+        idToken,
+        accessToken,
+        refreshToken,
+      }
+
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(nextUser))
+      setUser(nextUser)
+      setIsLoading(false)
+    })
   }, [])
 
   const signIn = async (username: string, password: string) => {
