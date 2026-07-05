@@ -92,7 +92,7 @@ export function ArticleDetailPage() {
   if (error || !article) {
     return <ArticleNotFound onRetry={() => void refetch()} />
   }
-  const articleUrl = window.location.href
+  const articleUrl = decodeURI(window.location.href)
 
   const shareWhatsapp = () => {
     window.open(
