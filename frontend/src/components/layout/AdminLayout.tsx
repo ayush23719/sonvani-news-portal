@@ -142,9 +142,6 @@ export function AdminLayout() {
           <IconButton edge="start" color="inherit" onClick={() => setMobileOpen(true)}>
             <MenuIcon />
           </IconButton>
-          <Typography variant="h6" sx={{ ml: 1, fontWeight: 700 }}>
-            {user?.role === 'ADMIN' ? 'Admin Dashboard' : 'Reporter Dashboard'}
-          </Typography>
         </Toolbar>
       </AppBar>
 
