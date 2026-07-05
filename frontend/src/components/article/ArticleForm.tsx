@@ -15,6 +15,10 @@ import {
   Accordion,
   AccordionDetails,
   AccordionSummary,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
 } from '@mui/material'
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 import { uploadImage } from '@/services/mediaService'
@@ -64,7 +68,7 @@ const emptyForm: ArticleFormData = {
   summary: '',
   body: '',
   reporterName: '',
-  category: '',
+  category: 'जनरल',
   district: '',
   state: '',
   youtubeVideoId: '',
@@ -78,6 +82,18 @@ const emptyForm: ArticleFormData = {
 
   images: [],
 }
+
+const ARTICLE_CATEGORIES = [
+  'जनरल',
+  'देश',
+  'क्राइम',
+  'खेल',
+  'राजनीति',
+  'धर्म',
+  'स्वास्थ्य',
+  'बिजनेस',
+  'वीडियो',
+]
 
 export function ArticleForm({ mode, articleId }: ArticleFormProps) {
   const [form, setForm] = useState<ArticleFormData>(emptyForm)
@@ -142,7 +158,9 @@ export function ArticleForm({ mode, articleId }: ArticleFormProps) {
           summary: article.summary ?? '',
           body: article.body ?? '',
           reporterName: article.reporterName ?? '',
-          category: article.category ?? '',
+          category: ARTICLE_CATEGORIES.includes(article.category ?? '')
+            ? article.category!
+            : 'जनरल',
           district: article.district ?? '',
           state: article.state ?? '',
           youtubeVideoId: article.youtubeVideoId ?? '',
@@ -250,7 +268,6 @@ export function ArticleForm({ mode, articleId }: ArticleFormProps) {
       setSaving(true)
       setError('')
       setSuccess('')
-
       const payload = {
         title: form.title,
         summary: form.summary,
@@ -383,12 +400,26 @@ export function ArticleForm({ mode, articleId }: ArticleFormProps) {
               </Grid>
 
               <Grid size={{ xs: 12, md: 6 }}>
-                <TextField
-                  fullWidth
-                  label="श्रेणी"
-                  value={form.category}
-                  onChange={update('category')}
-                />
+                <FormControl fullWidth>
+                  <InputLabel>श्रेणी</InputLabel>
+
+                  <Select
+                    label="श्रेणी"
+                    value={form.category}
+                    onChange={(event) =>
+                      setForm((prev) => ({
+                        ...prev,
+                        category: event.target.value,
+                      }))
+                    }
+                  >
+                    {ARTICLE_CATEGORIES.map((category) => (
+                      <MenuItem key={category} value={category}>
+                        {category}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
               </Grid>
 
               <Grid size={{ xs: 12, md: 6 }}>
