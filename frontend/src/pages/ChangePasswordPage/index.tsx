@@ -24,7 +24,7 @@ export function ChangePasswordPage() {
     e.preventDefault()
 
     if (password !== confirmPassword) {
-      setError('Passwords do not match.')
+      setError('दोनों पासवर्ड समान होने चाहिए।')
       return
     }
 
@@ -36,7 +36,7 @@ export function ChangePasswordPage() {
 
       navigate('/admin/articles', { replace: true })
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to update password.')
+      setError(err instanceof Error ? err.message : 'पासवर्ड अपडेट नहीं किया जा सका।')
     } finally {
       setLoading(false)
     }
@@ -46,13 +46,17 @@ export function ChangePasswordPage() {
     <Container maxWidth="sm" sx={{ py: 8 }}>
       <Card>
         <CardContent>
-          <Typography variant="h4" sx={{ mb: 3, fontWeight: 700 }}>
-            Set New Password
+          <Typography variant="h4" sx={{ mb: 1, fontWeight: 700 }}>
+            नया पासवर्ड सेट करें
+          </Typography>
+
+          <Typography color="text.secondary" sx={{ mb: 3 }}>
+            सुरक्षा कारणों से पहली बार लॉगिन करने पर नया पासवर्ड बनाना आवश्यक है।
           </Typography>
 
           <Stack component="form" spacing={2} onSubmit={handleSubmit}>
             <TextField
-              label="New Password"
+              label="नया पासवर्ड"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -61,7 +65,7 @@ export function ChangePasswordPage() {
             />
 
             <TextField
-              label="Confirm Password"
+              label="नया पासवर्ड पुनः दर्ज करें"
               type="password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
@@ -72,7 +76,7 @@ export function ChangePasswordPage() {
             {error && <Typography color="error">{error}</Typography>}
 
             <Button type="submit" variant="contained" disabled={loading}>
-              {loading ? 'Updating...' : 'Update Password'}
+              {loading ? 'पासवर्ड अपडेट किया जा रहा है...' : 'पासवर्ड अपडेट करें'}
             </Button>
           </Stack>
         </CardContent>
