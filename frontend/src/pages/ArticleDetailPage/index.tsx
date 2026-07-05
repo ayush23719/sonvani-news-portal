@@ -7,11 +7,17 @@ import {
   Stack,
   Typography,
 } from '@mui/material'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { getJson } from '@/services/apiClient'
 import type { Article } from '@/types/news'
+import ShareIcon from '@mui/icons-material/Share'
+import WhatsAppIcon from '@mui/icons-material/WhatsApp'
+import FacebookIcon from '@mui/icons-material/Facebook'
+import XIcon from '@mui/icons-material/X'
+import InstagramIcon from '@mui/icons-material/Instagram'
+import { IconButton, Snackbar } from '@mui/material'
 
 type ApiResponse<TData> = {
   success: boolean
@@ -65,6 +71,8 @@ export function ArticleDetailPage() {
     queryFn: () => fetchArticleBySlug(slug!),
     enabled: !!slug,
   })
+  const [snackbarOpen, setSnackbarOpen] = useState(false)
+  const [snackbarMessage, setSnackbarMessage] = useState('')
 
   useEffect(() => {
     if (article) {
@@ -83,6 +91,56 @@ export function ArticleDetailPage() {
 
   if (error || !article) {
     return <ArticleNotFound onRetry={() => void refetch()} />
+  }
+  const articleUrl = window.location.href
+
+  const shareWhatsapp = () => {
+    window.open(
+      `https://wa.me/?text=${encodeURIComponent(article.title + '\n' + articleUrl)}`,
+      '_blank',
+    )
+  }
+
+  const shareFacebook = () => {
+    window.open(
+      `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(articleUrl)}`,
+      '_blank',
+    )
+  }
+
+  const shareX = () => {
+    window.open(
+      `https://twitter.com/intent/tweet?text=${encodeURIComponent(
+        article.title,
+      )}&url=${encodeURIComponent(articleUrl)}`,
+      '_blank',
+    )
+  }
+
+  const shareInstagram = async () => {
+    await navigator.clipboard.writeText(articleUrl)
+
+    setSnackbarMessage('Instagram पर सीधे शेयर करना संभव नहीं है। लिंक कॉपी हो गया है।')
+    setSnackbarOpen(true)
+  }
+  const shareArticle = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: article.title,
+          text: article.summary,
+          url: articleUrl,
+        })
+        return
+      } catch {
+        // user cancelled or sharing failed
+      }
+    }
+
+    await navigator.clipboard.writeText(articleUrl)
+
+    setSnackbarMessage('लिंक कॉपी हो गया।')
+    setSnackbarOpen(true)
   }
   const youtubeId = extractYoutubeId(article.youtubeVideoId)
   return (
@@ -204,7 +262,43 @@ export function ArticleDetailPage() {
                 </Box>
               )}
             </Stack>
+            <Stack
+              direction="row"
+              spacing={1}
+              sx={{
+                alignItems: 'center',
+                flexWrap: 'wrap',
+              }}
+            >
+              <Typography
+                sx={{
+                  fontWeight: 700,
+                  mr: 1,
+                }}
+              >
+                साझा करें:
+              </Typography>
 
+              <IconButton color="success" onClick={shareWhatsapp}>
+                <WhatsAppIcon />
+              </IconButton>
+
+              <IconButton color="primary" onClick={shareFacebook}>
+                <FacebookIcon />
+              </IconButton>
+
+              <IconButton onClick={shareX}>
+                <XIcon />
+              </IconButton>
+
+              <IconButton color="secondary" onClick={shareInstagram}>
+                <InstagramIcon />
+              </IconButton>
+
+              <IconButton onClick={shareArticle}>
+                <ShareIcon />
+              </IconButton>
+            </Stack>
             {article.images?.length > 0 && (
               <Box>
                 <Box
@@ -425,6 +519,12 @@ export function ArticleDetailPage() {
           </Stack>
         </article>
       </Paper>
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={3000}
+        onClose={() => setSnackbarOpen(false)}
+        message={snackbarMessage}
+      />
     </Container>
   )
 }
