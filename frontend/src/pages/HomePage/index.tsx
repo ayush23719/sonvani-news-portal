@@ -38,19 +38,24 @@ export function HomePage() {
     <>
       <BreakingNewsTicker items={data.breakingNews} />
 
-      <Container sx={{ py: { xs: 2.5, md: 4 } }}>
+      <Container
+        maxWidth="lg"
+        sx={{
+          py: { xs: 2.5, md: 4 },
+        }}
+      >
         <Box
           sx={{
             display: 'grid',
-            gap: { xs: 3, lg: 3.5 },
+            gap: { xs: 3, lg: 2.5 },
             gridTemplateColumns: {
               xs: '1fr',
-              lg: 'minmax(0, 1fr) 340px',
+              lg: 'minmax(0, 1fr) 300px',
             },
             minWidth: 0,
           }}
         >
-          <Stack spacing={{ xs: 3, md: 4 }} sx={{ minWidth: 0 }}>
+          <Stack spacing={{ xs: 3, md: 3 }} sx={{ minWidth: 0 }}>
             <HeroStory item={data.heroStory} />
 
             <TopStoriesGrid items={data.topStories} />
@@ -81,7 +86,12 @@ export function HomePage() {
 
 function HomePageLoading() {
   return (
-    <Container sx={{ py: { xs: 6, md: 10 } }}>
+    <Container
+      maxWidth="lg"
+      sx={{
+        py: { xs: 6, md: 10 },
+      }}
+    >
       <Paper
         elevation={0}
         sx={{
@@ -104,7 +114,12 @@ function HomePageLoading() {
 
 function HomePageError({ onRetry }: { onRetry: () => void }) {
   return (
-    <Container sx={{ py: { xs: 6, md: 10 } }}>
+    <Container
+      maxWidth="lg"
+      sx={{
+        py: { xs: 6, md: 10 },
+      }}
+    >
       <Paper
         elevation={0}
         sx={{

@@ -12,6 +12,7 @@ import {
   Stack,
   Typography,
 } from '@mui/material'
+import { useEffect } from 'react'
 import {
   DISTRICT_NAVIGATION_ITEMS,
   PRIMARY_NAVIGATION_ITEMS,
@@ -24,11 +25,50 @@ type MobileNavigationDrawerProps = {
 }
 
 export function MobileNavigationDrawer({ open, onClose }: MobileNavigationDrawerProps) {
+  useEffect(() => {
+    const html = document.documentElement
+    const body = document.body
+
+    if (open) {
+      html.style.overflow = 'hidden'
+      body.style.overflow = 'hidden'
+
+      html.style.touchAction = 'none'
+      body.style.touchAction = 'none'
+
+      body.style.position = 'fixed'
+      body.style.width = '100%'
+    } else {
+      html.style.overflow = ''
+      body.style.overflow = ''
+
+      html.style.touchAction = ''
+      body.style.touchAction = ''
+
+      body.style.position = ''
+      body.style.width = ''
+    }
+
+    return () => {
+      html.style.overflow = ''
+      body.style.overflow = ''
+
+      html.style.touchAction = ''
+      body.style.touchAction = ''
+
+      body.style.position = ''
+      body.style.width = ''
+    }
+  }, [open])
   return (
     <Drawer
       anchor="right"
       open={open}
       onClose={onClose}
+      ModalProps={{
+        keepMounted: true,
+        disableScrollLock: false,
+      }}
       slotProps={{
         paper: {
           sx: {
