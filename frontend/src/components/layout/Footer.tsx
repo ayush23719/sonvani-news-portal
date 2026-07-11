@@ -12,19 +12,33 @@ import {
   Typography,
 } from '@mui/material'
 import { brandConfig } from '@/config/brand'
-
+import { Link as RouterLink } from 'react-router-dom'
 const footerGroups = [
   {
     title: 'समाचार',
-    links: ['ताज़ा खबरें', 'राज्य', 'देश', 'क्राइम'],
+    links: [
+      { label: 'ताज़ा खबरें', href: '/categories/latest/articles' },
+      { label: 'राज्य', href: '/states/उत्तर-प्रदेश/articles' },
+      { label: 'देश', href: '/categories/desh/articles' },
+      { label: 'क्राइम', href: '/categories/crime/articles' },
+    ],
   },
   {
     title: 'सोनवाणी',
-    links: ['हमारे बारे में', 'संपर्क करें', 'संपादकीय नीति', 'विज्ञापन'],
+    links: [
+      { label: 'हमारे बारे में', href: '/about' },
+      { label: 'संपर्क करें', href: '/contact' },
+      { label: 'संपादकीय नीति', href: '/editorial-policy' },
+      { label: 'विज्ञापन', href: '/contact' },
+    ],
   },
   {
     title: 'कानूनी',
-    links: ['गोपनीयता नीति', 'नियम और शर्तें', 'डिस्क्लेमर'],
+    links: [
+      { label: 'गोपनीयता नीति', href: '/privacy-policy' },
+      { label: 'नियम और शर्तें', href: '/terms' },
+      { label: 'डिस्क्लेमर', href: '/disclaimer' },
+    ],
   },
 ]
 
@@ -118,7 +132,9 @@ export function Footer() {
               <Stack spacing={0.5} sx={{ alignItems: 'flex-start' }}>
                 {group.links.map((link) => (
                   <Button
-                    key={link}
+                    key={link.label}
+                    component={RouterLink}
+                    to={link.href}
                     color="inherit"
                     size="small"
                     sx={{
@@ -129,7 +145,7 @@ export function Footer() {
                       textAlign: 'left',
                     }}
                   >
-                    {link}
+                    {link.label}
                   </Button>
                 ))}
               </Stack>

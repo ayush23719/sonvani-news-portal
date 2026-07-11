@@ -19,7 +19,12 @@ import { NotFoundPage } from '@/pages/NotFoundPage'
 import { VideoPage } from '@/pages/VideoPage'
 import { GalleryPage } from '@/pages/GalleryPage'
 import { SearchPage } from '@/pages/SearchPage'
-
+import { DisclaimerPage } from '@/pages/DisclaimerPage'
+import { ContactPage } from '@/pages/ContactPage'
+import { AboutPage } from '@/pages/AboutPage'
+import { PrivacyPolicyPage } from '@/pages/PrivacyPolicyPage'
+import { TermsPage } from '@/pages/TermsPage'
+import { EditorialPolicyPage } from '@/pages/EditorialPolicyPage'
 export const router = createBrowserRouter([
   {
     path: '/',
@@ -56,6 +61,30 @@ export const router = createBrowserRouter([
       {
         path: 'search',
         element: <SearchPage />,
+      },
+      {
+        path: 'disclaimer',
+        element: <DisclaimerPage />,
+      },
+      {
+        path: 'about',
+        element: <AboutPage />,
+      },
+      {
+        path: 'privacy-policy',
+        element: <PrivacyPolicyPage />,
+      },
+      {
+        path: 'terms',
+        element: <TermsPage />,
+      },
+      {
+        path: 'editorial-policy',
+        element: <EditorialPolicyPage />,
+      },
+      {
+        path: 'contact',
+        element: <ContactPage />,
       },
       {
         path: 'login',
