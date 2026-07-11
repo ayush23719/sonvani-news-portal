@@ -8,6 +8,7 @@ export type NewsItem = {
   categorySlug: string
 
   district?: string
+  districtSlug?: string
   state?: string
 
   publishedAt: string
@@ -42,6 +43,7 @@ export type VideoItem = {
   youtubeVideoId: string
   duration: string
   imageLabel: string
+  thumbnailUrl: string
 }
 
 export type GalleryItem = {

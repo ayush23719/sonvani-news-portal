@@ -711,6 +711,48 @@ Resources:
         Minify: true
         Sourcemap: false
         Target: es2022
+  GetVideosFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Role: !GetAtt PublicReadFunctionRole.Arn
+      Handler: src/functions/getVideos/app.handler
+      CodeUri: .
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref PublicApi
+            Path: /api/v1/videos
+            Method: GET
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        EntryPoints:
+          - src/functions/getVideos/app.ts
+        Format: cjs
+        Minify: true
+        Target: es2022
+  GetGalleryFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Role: !GetAtt PublicReadFunctionRole.Arn
+      Handler: src/functions/getGallery/app.handler
+      CodeUri: .
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref PublicApi
+            Path: /api/v1/gallery
+            Method: GET
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        EntryPoints:
+          - src/functions/getGallery/app.ts
+        Format: cjs
+        Minify: true
+        Target: es2022
   UpdateArticleFunction:
     Type: AWS::Serverless::Function
     Properties:

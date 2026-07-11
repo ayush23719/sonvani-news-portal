@@ -30,7 +30,9 @@ export const handler: APIGatewayProxyHandler = async (event) => {
   try {
     validateRequiredEnvironment()
 
-    const categorySlug = event.pathParameters?.categorySlug?.trim()
+    const categorySlug = decodeURIComponent(
+      event.pathParameters?.categorySlug?.trim() ?? '',
+    )
 
     if (!categorySlug) {
       throw new AppError('VALIDATION_ERROR', 'Category slug is required.', 400)

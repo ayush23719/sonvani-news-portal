@@ -16,6 +16,9 @@ import { AdminCreateArticlePage } from '@/pages/AdminCreateArticlePage'
 import { AdminEditArticlePage } from '@/pages/AdminEditArticlePage'
 import { AdminProfilePage } from '@/pages/AdminProfilePage'
 import { NotFoundPage } from '@/pages/NotFoundPage'
+import { VideoPage } from '@/pages/VideoPage'
+import { GalleryPage } from '@/pages/GalleryPage'
+import { SearchPage } from '@/pages/SearchPage'
 
 export const router = createBrowserRouter([
   {
@@ -41,6 +44,18 @@ export const router = createBrowserRouter([
       {
         path: 'states/:stateSlug/articles',
         element: <StatePage />,
+      },
+      {
+        path: 'video',
+        element: <VideoPage />,
+      },
+      {
+        path: 'gallery',
+        element: <GalleryPage />,
+      },
+      {
+        path: 'search',
+        element: <SearchPage />,
       },
       {
         path: 'login',

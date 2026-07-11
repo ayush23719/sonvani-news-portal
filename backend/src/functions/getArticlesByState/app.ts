@@ -30,7 +30,7 @@ export const handler: APIGatewayProxyHandler = async (event) => {
   try {
     validateRequiredEnvironment()
 
-    const stateSlug = event.pathParameters?.stateSlug?.trim()
+    const stateSlug = decodeURIComponent(event.pathParameters?.stateSlug?.trim() ?? '')
 
     if (!stateSlug) {
       throw new AppError('VALIDATION_ERROR', 'State slug is required.', 400)

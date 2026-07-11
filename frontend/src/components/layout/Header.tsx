@@ -16,10 +16,19 @@ import { useState } from 'react'
 import { MobileNavigationDrawer } from '@/components/navigation/MobileNavigationDrawer'
 import { Navigation } from '@/components/navigation/Navigation'
 import { brandConfig } from '@/config/brand'
-import { Link as RouterLink } from 'react-router-dom'
+import { Link as RouterLink, useNavigate } from 'react-router-dom'
 export function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const [searchText, setSearchText] = useState('')
+  const navigate = useNavigate()
 
+  const performSearch = () => {
+    const query = searchText.trim()
+
+    if (!query) return
+
+    navigate(`/search?q=${encodeURIComponent(query)}`)
+  }
   return (
     <>
       <AppBar
@@ -68,6 +77,10 @@ export function Header() {
               </Button>
               <Paper
                 component="form"
+                onSubmit={(e) => {
+                  e.preventDefault()
+                  performSearch()
+                }}
                 elevation={0}
                 sx={{
                   display: 'flex',
@@ -80,11 +93,19 @@ export function Header() {
               >
                 <InputBase
                   fullWidth
-                  inputProps={{ 'aria-label': 'खबर खोजें' }}
+                  value={searchText}
+                  onChange={(e) => setSearchText(e.target.value)}
                   placeholder="यहां लिखें"
-                  sx={{ fontSize: '0.92rem' }}
+                  inputProps={{
+                    'aria-label': 'खबर खोजें',
+                  }}
+                  sx={{
+                    fontSize: '0.92rem',
+                  }}
                 />
-                <SearchIcon sx={{ color: 'text.secondary' }} />
+                <IconButton onClick={performSearch}>
+                  <SearchIcon />
+                </IconButton>
               </Paper>
               <Stack direction="row" spacing={1}>
                 <Button color="secondary" variant="contained">

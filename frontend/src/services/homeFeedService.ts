@@ -91,6 +91,18 @@ function toHomePageData(data: HomeFeedApiData): HomePageData {
   if (!heroStory) {
     throw new Error('अभी कोई खबर उपलब्ध नहीं है।')
   }
+  function uniqueApiArticles(items: ApiArticleSummary[]) {
+    const seen = new Set<string>()
+
+    return items.filter((item) => {
+      if (seen.has(item.articleId)) {
+        return false
+      }
+
+      seen.add(item.articleId)
+      return true
+    })
+  }
 
   return {
     breakingNews: breakingNews.length > 0 ? breakingNews : latestNews.slice(0, 3),
@@ -99,8 +111,20 @@ function toHomePageData(data: HomeFeedApiData): HomePageData {
     latestNews,
     categorySections: buildCategorySections(allArticles),
     districtSections: buildDistrictSections(allArticles),
-    videoNews: buildVideoNews(data.latestArticles.items),
-    photoGallery: buildPhotoGallery(data.latestArticles.items),
+    videoNews: buildVideoNews(
+      uniqueApiArticles([
+        ...data.latestArticles.items,
+        ...data.featuredArticles.items,
+        ...data.breakingNews.items,
+      ]),
+    ),
+    photoGallery: buildPhotoGallery(
+      uniqueApiArticles([
+        ...data.latestArticles.items,
+        ...data.featuredArticles.items,
+        ...data.breakingNews.items,
+      ]),
+    ),
   }
 }
 
@@ -127,6 +151,7 @@ function toNewsItem(article: ApiArticleSummary, index = 0): NewsItem {
 
     isBreaking: article.isBreaking,
     isFeatured: article.isFeatured,
+    districtSlug: article.districtSlug,
   }
 }
 
@@ -172,32 +197,29 @@ function buildDistrictSections(items: NewsItem[]): DistrictBlock[] {
   const sections = new Map<string, DistrictBlock>()
 
   for (const item of items) {
-    if (!item.district) {
+    if (!item.district || !item.districtSlug) {
       continue
     }
 
-    const districtSlug = item.district.toLowerCase().replaceAll(' ', '-')
-    const existing = sections.get(item.district)
+    const existing = sections.get(item.districtSlug)
 
     if (existing) {
       if (existing.items.length < 3) {
         existing.items.push(item)
       }
-
       continue
     }
 
-    sections.set(item.district, {
-      id: `district-${districtSlug}`,
+    sections.set(item.districtSlug, {
+      id: `district-${item.districtSlug}`,
       name: item.district,
-      href: `/districts/${districtSlug}/articles`,
+      href: `/districts/${item.districtSlug}/articles`,
       items: [item],
     })
   }
 
   return [...sections.values()].slice(0, 3)
 }
-
 function buildVideoNews(items: ApiArticleSummary[]): VideoItem[] {
   return items
     .filter((item) => item.youtubeVideoId)
@@ -207,8 +229,9 @@ function buildVideoNews(items: ApiArticleSummary[]): VideoItem[] {
       title: item.title,
       href: `/articles/${item.slug}`,
       youtubeVideoId: item.youtubeVideoId ?? '',
-      duration: 'वीडियो',
+      duration: 'YouTube',
       imageLabel: item.category,
+      thumbnailUrl: `https://img.youtube.com/vi/${item.youtubeVideoId}/hqdefault.jpg`,
     }))
 }
 

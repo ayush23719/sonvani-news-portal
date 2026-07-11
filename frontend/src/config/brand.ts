@@ -17,9 +17,9 @@ export const brandConfig = {
     warningAmber: '#F59E0B',
   },
   socialLinks: {
-    facebook: '#',
-    youtube: '#',
-    instagram: '#',
-    whatsapp: '#',
+    facebook: 'https://www.facebook.com/share/1Cw1uNunku/',
+    youtube: 'https://youtube.com/@sonevaninews?si=wRTFK4tZ3PytU9X_',
+    instagram: 'https://www.instagram.com/sonvaninews?igsh=MTBpNm00czI0cWMwdQ==',
+    whatsapp: 'https://wa.me/c/919140931961',
   },
 } as const

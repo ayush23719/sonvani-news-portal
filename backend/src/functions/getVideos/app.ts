@@ -1,5 +1,4 @@
 import type { APIGatewayProxyHandler } from 'aws-lambda'
-import { QueryCommand, type QueryCommandInput } from '@aws-sdk/lib-dynamodb'
 import { dynamoDbDocumentClient } from '../../shared/clients/dynamodb.js'
 import { AppError } from '../../shared/errors/appError.js'
 import { getRequiredEnv } from '../../shared/env/environment.js'
@@ -12,7 +11,7 @@ import {
 import { errorResponse, successResponse } from '../../shared/responses/apiResponse.js'
 import { validateRequiredEnvironment } from '../../shared/validation/environment.js'
 import type { Article } from '../../shared/types/news.js'
-
+import { ScanCommand, type ScanCommandInput } from '@aws-sdk/lib-dynamodb'
 type ArticleSummary = Omit<Article, 'body'>
 
 type ListingResponse = {
@@ -30,55 +29,27 @@ export const handler: APIGatewayProxyHandler = async (event) => {
   try {
     validateRequiredEnvironment()
 
-    const districtSlug = decodeURIComponent(
-      event.pathParameters?.districtSlug?.trim() ?? '',
-    )
-
-    if (!districtSlug) {
-      throw new AppError('VALIDATION_ERROR', 'District slug is required.', 400)
-    }
-
-    logger.info('District articles request received', {
-      requestId,
-      districtSlug,
-    })
-
     const limit = parsePositiveInteger(event.queryStringParameters?.limit, 12, 20)
     const cursor = event.queryStringParameters?.cursor
     const tableName = getRequiredEnv('ARTICLES_TABLE_NAME')
-
-    const commandInput: QueryCommandInput = {
+    const commandInput: ScanCommandInput = {
       TableName: tableName,
-      IndexName: 'GSI_ByDistrict',
       Limit: limit,
-      ScanIndexForward: false,
-      KeyConditionExpression: 'districtSlug = :districtSlug AND publishDate <= :now',
-      FilterExpression: '#status = :publishedStatus',
-      ExpressionAttributeValues: {
-        ':districtSlug': districtSlug,
-        ':now': new Date().toISOString(),
-        ':publishedStatus': 'PUBLISHED',
-      },
+      ExclusiveStartKey: decodeCursor(cursor),
+      FilterExpression: '#status = :publishedStatus AND attribute_exists(youtubeVideoId)',
       ExpressionAttributeNames: {
         '#status': 'status',
       },
-      ExclusiveStartKey: decodeCursor(cursor),
+      ExpressionAttributeValues: {
+        ':publishedStatus': 'PUBLISHED',
+      },
     }
 
-    const result = await dynamoDbDocumentClient.send(new QueryCommand(commandInput))
-
-    console.log('========== DISTRICT QUERY ==========')
-    console.log('districtSlug:', districtSlug)
-    console.log('tableName:', tableName)
-    console.log('commandInput:', JSON.stringify(commandInput, null, 2))
-    console.log('result:', JSON.stringify(result, null, 2))
-    console.log('====================================')
-
+    const result = await dynamoDbDocumentClient.send(new ScanCommand(commandInput))
     const items = (result.Items ?? []).map((item) => item as ArticleSummary)
 
-    logger.info('District articles found', {
+    logger.info('Video articles found', {
       requestId,
-      districtSlug,
       count: items.length,
     })
 
@@ -93,7 +64,7 @@ export const handler: APIGatewayProxyHandler = async (event) => {
 
     return successResponse(response, requestId)
   } catch (error) {
-    logger.error('District articles request failed', {
+    logger.error('Category articles request failed', {
       requestId,
       errorName: error instanceof Error ? error.name : 'UnknownError',
       errorMessage: error instanceof Error ? error.message : 'Unknown error',
