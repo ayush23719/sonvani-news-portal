@@ -11,6 +11,7 @@ import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { getJson } from '@/services/apiClient'
+import { env } from '@/config/env'
 import type { Article } from '@/types/news'
 import ShareIcon from '@mui/icons-material/Share'
 import WhatsAppIcon from '@mui/icons-material/WhatsApp'
@@ -75,10 +76,86 @@ export function ArticleDetailPage() {
   const [snackbarMessage, setSnackbarMessage] = useState('')
 
   useEffect(() => {
-    if (article) {
-      const title = article.seo?.title || article.title
-      document.title = `${title} | सोनवानी`
+    if (!article) {
+      return
     }
+
+    const title = article.seo?.title || article.title
+    const description = article.seo?.description || article.summary
+    const siteDomain = (env.siteDomain || window.location.origin).replace(/\/$/, '')
+    const canonicalUrl = `${siteDomain}/articles/${encodeURIComponent(article.slug)}`
+    const imageUrlCandidate =
+      article.images?.find((image) => image.isPrimary)?.url ||
+      article.seo?.ogImage ||
+      '/brand/sonvani-logo.svg'
+    const imageUrl = imageUrlCandidate.startsWith('/')
+      ? `${siteDomain}${imageUrlCandidate}`
+      : imageUrlCandidate
+
+    document.title = `${title} | सोनवानी`
+
+    const metaTags = [
+      ['description', description],
+      ['og:title', title],
+      ['og:description', description],
+      ['og:type', 'article'],
+      ['og:url', canonicalUrl],
+      ['og:site_name', 'Son Vani'],
+      ['twitter:card', 'summary_large_image'],
+      ['twitter:title', title],
+      ['twitter:description', description],
+    ] as const
+
+    metaTags.forEach(([property, content]) => {
+      const element =
+        document.querySelector(`meta[name="${property}"]`) ||
+        document.querySelector(`meta[property="${property}"]`)
+      if (element) {
+        element.setAttribute('content', content)
+        return
+      }
+
+      const newElement = document.createElement('meta')
+      if (property.startsWith('og:') || property.startsWith('twitter:')) {
+        newElement.setAttribute('property', property)
+      } else {
+        newElement.setAttribute('name', property)
+      }
+      newElement.setAttribute('content', content)
+      document.head.appendChild(newElement)
+    })
+
+    const imageElement =
+      document.querySelector('meta[property="og:image"]') ||
+      document.querySelector('meta[name="twitter:image"]')
+    if (imageElement) {
+      imageElement.setAttribute('content', imageUrl)
+    } else {
+      const fallbackImage = document.createElement('meta')
+      fallbackImage.setAttribute('property', 'og:image')
+      fallbackImage.setAttribute('content', imageUrl)
+      document.head.appendChild(fallbackImage)
+    }
+
+    const twitterImage = document.querySelector('meta[name="twitter:image"]')
+    if (twitterImage) {
+      twitterImage.setAttribute('content', imageUrl)
+    } else {
+      const newTwitterImage = document.createElement('meta')
+      newTwitterImage.setAttribute('name', 'twitter:image')
+      newTwitterImage.setAttribute('content', imageUrl)
+      document.head.appendChild(newTwitterImage)
+    }
+
+    let canonical = document.querySelector(
+      'link[rel="canonical"]',
+    ) as HTMLLinkElement | null
+    if (!canonical) {
+      canonical = document.createElement('link')
+      canonical.setAttribute('rel', 'canonical')
+      document.head.appendChild(canonical)
+    }
+    canonical.setAttribute('href', canonicalUrl)
   }, [article])
 
   if (!slug) {

@@ -505,6 +505,29 @@ Resources:
         Sourcemap: false
         Target: es2022
 
+  RenderArticleSocialPreviewFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Role: !GetAtt PublicReadFunctionRole.Arn
+      Handler: src/functions/renderArticleSocialPreview/app.handler
+      CodeUri: .
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref PublicApi
+            Path: /social-preview/articles/{slug}
+            Method: GET
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        EntryPoints:
+          - src/functions/renderArticleSocialPreview/app.ts
+        Format: cjs
+        Minify: true
+        Sourcemap: false
+        Target: es2022
+
   GetArticlesByCategoryFunction:
     Type: AWS::Serverless::Function
     Properties:
