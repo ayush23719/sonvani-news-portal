@@ -281,25 +281,6 @@ Resources:
         SigningBehavior: always
         SigningProtocol: sigv4
 
-  ArticleRouteCachePolicy:
-    Type: AWS::CloudFront::CachePolicy
-    Properties:
-      CachePolicyConfig:
-        Name: !Sub '${AWS::StackName}-article-route-no-cache'
-        Comment: Ensures /articles/* reaches origin-request Lambda@Edge for social bot routing.
-        DefaultTTL: 0
-        MaxTTL: 0
-        MinTTL: 0
-        ParametersInCacheKeyAndForwardedToOrigin:
-          EnableAcceptEncodingBrotli: true
-          EnableAcceptEncodingGzip: true
-          CookiesConfig:
-            CookieBehavior: none
-          HeadersConfig:
-            HeaderBehavior: none
-          QueryStringsConfig:
-            QueryStringBehavior: none
-
   FrontendDistribution:
     Type: AWS::CloudFront::Distribution
     Properties:
@@ -342,7 +323,7 @@ Resources:
               - GET
               - HEAD
             Compress: true
-            CachePolicyId: !Ref ArticleRouteCachePolicy
+            CachePolicyId: 4135ea2d-6df8-44a3-9df3-4b5a84be39ad
             LambdaFunctionAssociations: !If
               - HasArticleSocialPreviewEdgeArn
               - - EventType: origin-request

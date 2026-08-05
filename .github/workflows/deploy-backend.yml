@@ -51,13 +51,13 @@ jobs:
         run: |
           sam deploy \
             --template-file backend/template.yaml \
-            --stack-name sonvani-news-prod \
+            --stack-name sonvani-backend-dev \
             --resolve-s3 \
             --capabilities CAPABILITY_IAM \
             --no-confirm-changeset \
             --no-fail-on-empty-changeset \
             --parameter-overrides \
-              EnvironmentName=prod \
+              EnvironmentName=dev \
               FrontendBucketName=sonvani-news-frontend-prod \
               FrontendDomainName=sonvani.in \
               WwwFrontendDomainName=www.sonvani.in \
