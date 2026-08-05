@@ -1,6 +1,5 @@
 import type { APIGatewayProxyHandler } from 'aws-lambda'
 import { dynamoDbDocumentClient } from '../../shared/clients/dynamodb.js'
-import { AppError } from '../../shared/errors/appError.js'
 import { getRequiredEnv } from '../../shared/env/environment.js'
 import { logger } from '../../shared/logging/logger.js'
 import {

@@ -1,0 +1,52 @@
+name: Deploy Social Preview Edge
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - "infrastructure/cloudfront/**"
+      - ".github/workflows/deploy-edge.yml"
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      AWS_REGION: us-east-1
+      STACK_NAME: sonvani-social-preview-edge-prod
+      API_GATEWAY_STAGE_NAME: dev
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ env.AWS_REGION }}
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+
+      - name: Validate edge template
+        run: |
+          aws cloudformation validate-template --template-body file://infrastructure/cloudfront/template.yaml
+
+      - name: Deploy edge stack
+        run: |
+          aws cloudformation deploy \
+            --stack-name "$STACK_NAME" \
+            --template-file infrastructure/cloudfront/template.yaml \
+            --capabilities CAPABILITY_IAM \
+            --parameter-overrides \
+              EnvironmentName=prod \
+              ApiGatewayDomainName=${{ secrets.API_GATEWAY_DOMAIN_NAME }} \
+              ApiGatewayStageName=$API_GATEWAY_STAGE_NAME \
+              EdgeCodeVersion=${{ github.sha }}
+
+      - name: Print Lambda@Edge version ARN
+        run: |
+          aws cloudformation describe-stacks \
+            --stack-name "$STACK_NAME" \
+            --query "Stacks[0].Outputs[?OutputKey=='ArticleSocialPreviewEdgeVersionArn'].OutputValue" \
+            --output text

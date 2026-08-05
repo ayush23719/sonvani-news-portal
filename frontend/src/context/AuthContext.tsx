@@ -6,6 +6,7 @@ import {
 } from 'amazon-cognito-identity-js'
 import {
   createContext,
+  useCallback,
   useContext,
   useEffect,
   useMemo,
@@ -144,8 +145,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     if (!cognitoUser) {
       window.localStorage.removeItem(STORAGE_KEY)
-      setUser(null)
-      setIsLoading(false)
+      queueMicrotask(() => {
+        setUser(null)
+        setIsLoading(false)
+      })
       return
     }
 
@@ -180,7 +183,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     })
   }, [])
 
-  const signIn = async (username: string, password: string) => {
+  const signIn = useCallback(async (username: string, password: string) => {
     const userPool = getUserPool()
     const authenticationDetails = new AuthenticationDetails({
       Username: username,
@@ -226,8 +229,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         },
       })
     })
-  }
-  const completeNewPassword = async (password: string) => {
+  }, [])
+  const completeNewPassword = useCallback(async (password: string) => {
     if (!pendingCognitoUser) {
       throw new Error('No password change request found.')
     }
@@ -266,8 +269,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         },
       )
     })
-  }
-  const signUp = async (
+  }, [pendingCognitoUser])
+  const signUp = useCallback(async (
     username: string,
     email: string,
     password: string,
@@ -289,9 +292,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         resolve()
       })
     })
-  }
+  }, [])
 
-  const signOut = () => {
+  const signOut = useCallback(() => {
     const cachedUser = readStoredUser()
     if (cachedUser) {
       const cognitoUser = new CognitoUser({
@@ -303,7 +306,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     window.localStorage.removeItem(STORAGE_KEY)
     setUser(null)
-  }
+  }, [])
 
   const value = useMemo<AuthContextValue>(
     () => ({

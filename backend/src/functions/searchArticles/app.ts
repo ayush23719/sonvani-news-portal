@@ -5,6 +5,15 @@ import { getRequiredEnv } from '../../shared/env/environment.js'
 import { successResponse, errorResponse } from '../../shared/responses/apiResponse.js'
 import { validateRequiredEnvironment } from '../../shared/validation/environment.js'
 
+type SearchableArticle = {
+  status?: string
+  title?: string
+  summary?: string
+  body?: string
+  publishDate?: string
+  [key: string]: unknown
+}
+
 export const handler: APIGatewayProxyHandler = async (event) => {
   const requestId = event.requestContext.requestId
 
@@ -35,9 +44,9 @@ export const handler: APIGatewayProxyHandler = async (event) => {
       }),
     )
 
-    const items = (result.Items ?? [])
-      .filter((item: any) => item.status === 'PUBLISHED')
-      .filter((item: any) => {
+    const items = ((result.Items ?? []) as SearchableArticle[])
+      .filter((item) => item.status === 'PUBLISHED')
+      .filter((item) => {
         const title = item.title?.toLowerCase() ?? ''
         const summary = item.summary?.toLowerCase() ?? ''
         const body = item.body?.toLowerCase() ?? ''
@@ -45,8 +54,9 @@ export const handler: APIGatewayProxyHandler = async (event) => {
         return title.includes(lower) || summary.includes(lower) || body.includes(lower)
       })
       .sort(
-        (a: any, b: any) =>
-          new Date(b.publishDate).getTime() - new Date(a.publishDate).getTime(),
+        (a, b) =>
+          new Date(b.publishDate ?? '').getTime() -
+          new Date(a.publishDate ?? '').getTime(),
       )
 
     return successResponse(

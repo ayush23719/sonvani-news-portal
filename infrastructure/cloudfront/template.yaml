@@ -1,0 +1,133 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Sonvani Lambda@Edge origin-request router for article social previews.
+
+Parameters:
+  EnvironmentName:
+    Type: String
+    Default: prod
+    AllowedValues:
+      - dev
+      - staging
+      - prod
+  ApiGatewayDomainName:
+    Type: String
+    AllowedPattern: '^[A-Za-z0-9.-]+$'
+    Description: API Gateway execute-api domain without protocol or path.
+  ApiGatewayStageName:
+    Type: String
+    Default: prod
+    AllowedPattern: '^[A-Za-z0-9_-]+$'
+    Description: API Gateway stage name that contains /social-preview/articles/{slug}.
+  EdgeCodeVersion:
+    Type: String
+    Default: manual
+    AllowedPattern: '^[A-Za-z0-9._-]+$'
+    Description: Change this value to publish a new immutable Lambda@Edge version.
+
+Resources:
+  ArticleSocialPreviewEdgeRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+                - edgelambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Tags:
+        - Key: Application
+          Value: sonvani
+        - Key: Environment
+          Value: !Ref EnvironmentName
+
+  ArticleSocialPreviewEdgeFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Description: !Sub 'Routes ${EnvironmentName} article social bot requests to API Gateway previews.'
+      Handler: index.handler
+      Runtime: nodejs22.x
+      MemorySize: 128
+      Timeout: 5
+      Role: !GetAtt ArticleSocialPreviewEdgeRole.Arn
+      Code:
+        ZipFile: !Sub |
+          'use strict';
+
+          const API_GATEWAY_DOMAIN_NAME = '${ApiGatewayDomainName}';
+          const API_GATEWAY_STAGE_PATH = '/${ApiGatewayStageName}';
+          const BOT_USER_AGENT_PATTERN = /facebookexternalhit|facebot|meta-externalagent|meta-externalfetcher|whatsapp|twitterbot|linkedinbot|telegrambot|discordbot|slackbot|googlebot|bingbot|applebot|ia_archiver|crawler/i;
+          const ARTICLE_ROUTE_PATTERN = /^\/articles\/[^/?#]+\/?$/;
+
+          exports.handler = async (event) => {
+            const request = event.Records[0].cf.request;
+            const uri = request.uri || '/';
+            const headers = request.headers || {};
+            const userAgent =
+              (headers['user-agent'] && headers['user-agent'][0] && headers['user-agent'][0].value) || '';
+
+            if (!BOT_USER_AGENT_PATTERN.test(userAgent) || !ARTICLE_ROUTE_PATTERN.test(uri)) {
+              return request;
+            }
+
+            const rawSlug = uri.replace(/^\/articles\//, '').replace(/\/$/, '');
+            const slug = safeDecodeURIComponent(rawSlug);
+
+            if (!slug) {
+              return request;
+            }
+
+            request.uri = API_GATEWAY_STAGE_PATH + '/social-preview/articles/' + encodeURIComponent(slug);
+            request.origin = {
+              custom: {
+                domainName: API_GATEWAY_DOMAIN_NAME,
+                port: 443,
+                protocol: 'https',
+                protocolPolicy: 'https-only',
+                path: '',
+                sslProtocols: ['TLSv1.2'],
+                readTimeout: 30,
+                keepaliveTimeout: 5,
+                customHeaders: {},
+              },
+            };
+            request.headers.host = [{ key: 'Host', value: API_GATEWAY_DOMAIN_NAME }];
+
+            return request;
+          };
+
+          function safeDecodeURIComponent(value) {
+            try {
+              return decodeURIComponent(value);
+            } catch {
+              return value;
+            }
+          }
+      Tags:
+        - Key: Application
+          Value: sonvani
+        - Key: Environment
+          Value: !Ref EnvironmentName
+
+  ArticleSocialPreviewEdgeVersion:
+    Type: AWS::Lambda::Version
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      Description: !Sub '${EnvironmentName}-${EdgeCodeVersion}'
+      FunctionName: !Ref ArticleSocialPreviewEdgeFunction
+
+Outputs:
+  ArticleSocialPreviewEdgeFunctionArn:
+    Description: Lambda@Edge function ARN.
+    Value: !GetAtt ArticleSocialPreviewEdgeFunction.Arn
+  ArticleSocialPreviewEdgeVersionArn:
+    Description: Published Lambda@Edge version ARN to pass into backend/template.yaml.
+    Value: !Sub
+      - '${FunctionArn}:${Version}'
+      - FunctionArn: !GetAtt ArticleSocialPreviewEdgeFunction.Arn
+        Version: !GetAtt ArticleSocialPreviewEdgeVersion.Version

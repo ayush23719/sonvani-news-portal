@@ -10,7 +10,9 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
   if (auth) {
     try {
       idToken = JSON.parse(auth).idToken
-    } catch {}
+    } catch {
+      idToken = ''
+    }
   }
 
   const response = await fetch(`${apiBaseUrl}${path}`, {
