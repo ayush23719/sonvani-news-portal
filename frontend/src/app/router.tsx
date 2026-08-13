@@ -25,6 +25,7 @@ import { AboutPage } from '@/pages/AboutPage'
 import { PrivacyPolicyPage } from '@/pages/PrivacyPolicyPage'
 import { TermsPage } from '@/pages/TermsPage'
 import { EditorialPolicyPage } from '@/pages/EditorialPolicyPage'
+import { AdminAdvertisementsPage } from '@/pages/AdminAdvertisementsPage'
 export const router = createBrowserRouter([
   {
     path: '/',
@@ -135,6 +136,10 @@ export const router = createBrowserRouter([
       {
         path: 'users',
         element: <AdminUsersPage />,
+      },
+      {
+        path: 'advertisements',
+        element: <AdminAdvertisementsPage />,
       },
     ],
   },

@@ -22,7 +22,7 @@ import AddCircleOutlinedIcon from '@mui/icons-material/AddCircleOutlined'
 import PersonIcon from '@mui/icons-material/Person'
 import LogoutIcon from '@mui/icons-material/Logout'
 import { useAuth } from '@/context/AuthContext'
-
+import CampaignIcon from '@mui/icons-material/Campaign'
 function getNavigationItems(role: 'ADMIN' | 'REPORTER' | 'PUBLIC') {
   if (role === 'ADMIN') {
     return [
@@ -43,6 +43,11 @@ function getNavigationItems(role: 'ADMIN' | 'REPORTER' | 'PUBLIC') {
         href: '/admin/profile',
         icon: <PersonIcon />,
       },
+      {
+        label: 'विज्ञापन',
+        href: '/admin/advertisements',
+        icon: <CampaignIcon />,
+      },
     ]
   }
 
@@ -58,6 +63,11 @@ function getNavigationItems(role: 'ADMIN' | 'REPORTER' | 'PUBLIC') {
       label: 'प्रोफ़ाइल',
       href: '/admin/profile',
       icon: <PersonIcon />,
+    },
+    {
+      label: 'विज्ञापन',
+      href: '/admin/advertisements',
+      icon: <CampaignIcon />,
     },
   ]
 }

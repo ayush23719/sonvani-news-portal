@@ -89,3 +89,87 @@ export function getArticle(articleId: string) {
     }
   }>(`/admin/articles/${articleId}`)
 }
+export type Advertisement = {
+  advertisementId: string
+  imageUrl: string
+  s3Key: string
+  fileName: string
+  contentType: string
+  status: 'ACTIVE'
+  createdAt: string
+  createdBy: string
+}
+
+export async function getAdvertisements() {
+  return request<{
+    success: boolean
+    data: {
+      advertisements: Advertisement[]
+    }
+  }>('/ads/active')
+}
+
+export async function getAdvertisementUploadUrl(file: File) {
+  return request<{
+    success: boolean
+    data: {
+      uploadUrl: string
+      imageUrl: string
+      key: string
+    }
+  }>('/admin/media/upload-url', {
+    method: 'POST',
+    body: JSON.stringify({
+      fileName: file.name,
+      contentType: file.type,
+      uploadType: 'advertisement',
+    }),
+  })
+}
+
+export async function uploadAdvertisementFile(file: File) {
+  const uploadResponse = await getAdvertisementUploadUrl(file)
+
+  const uploadResult = await fetch(uploadResponse.data.uploadUrl, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': file.type,
+    },
+    body: file,
+  })
+
+  if (!uploadResult.ok) {
+    throw new Error('विज्ञापन फ़ाइल अपलोड नहीं हो सकी।')
+  }
+
+  return uploadResponse.data
+}
+
+export async function createAdvertisement(payload: {
+  imageUrl: string
+  s3Key: string
+  fileName: string
+  contentType: string
+}) {
+  return request<{
+    success: boolean
+    data: {
+      advertisement: Advertisement
+    }
+  }>('/admin/ads', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
+export async function deleteAdvertisement(advertisementId: string) {
+  return request<{
+    success: boolean
+    data: {
+      deleted: boolean
+      advertisementId: string
+    }
+  }>(`/admin/ads/${advertisementId}`, {
+    method: 'DELETE',
+  })
+}
