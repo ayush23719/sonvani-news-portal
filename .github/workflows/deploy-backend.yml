@@ -41,6 +41,10 @@ jobs:
       - name: Validate SAM template
         run: sam validate --lint --template backend/template.yaml
 
+      - name: Build SAM application
+        working-directory: backend
+        run: sam build --template-file template.yaml
+
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -50,7 +54,7 @@ jobs:
       - name: Deploy SAM stack
         run: |
           sam deploy \
-            --template-file backend/template.yaml \
+            --template-file backend/.aws-sam/build/template.yaml \
             --stack-name sonvani-backend-dev \
             --resolve-s3 \
             --capabilities CAPABILITY_IAM \
@@ -58,11 +62,7 @@ jobs:
             --no-fail-on-empty-changeset \
             --parameter-overrides \
               EnvironmentName=dev \
-              FrontendBucketName=sonvani-news-frontend-prod \
-              FrontendDomainName=sonvani.in \
-              WwwFrontendDomainName=www.sonvani.in \
-              HostedZoneId=${{ secrets.ROUTE53_HOSTED_ZONE_ID }} \
-              AcmCertificateArn=${{ secrets.ACM_CERTIFICATE_ARN }} \
+              LogLevel=info \
               CognitoUserPoolId=${{ secrets.COGNITO_USER_POOL_ID }} \
-              AllowedCorsOrigin=https://sonvani.in \
+              AllowedCorsOrigin="*" \
               ArticleSocialPreviewOriginRequestLambdaVersionArn=${{ secrets.ARTICLE_SOCIAL_PREVIEW_EDGE_LAMBDA_VERSION_ARN }}

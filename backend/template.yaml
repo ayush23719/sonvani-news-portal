@@ -23,23 +23,6 @@ Parameters:
     Default: '*'
   CognitoUserPoolId:
     Type: String
-  FrontendBucketName:
-    Type: String
-    Description: S3 bucket used to host the frontend assets.
-  FrontendDomainName:
-    Type: String
-    Description: Primary frontend domain name.
-  WwwFrontendDomainName:
-    Type: String
-    Description: WWW frontend domain name.
-  HostedZoneId:
-    Type: String
-    Default: ''
-    Description: Route 53 hosted zone ID for the frontend domains.
-  AcmCertificateArn:
-    Type: String
-    AllowedPattern: '^arn:aws[a-zA-Z-]*:acm:us-east-1:\d{12}:certificate/.+$'
-    Description: ACM certificate ARN in us-east-1 for the CloudFront distribution.
   ArticleSocialPreviewOriginRequestLambdaVersionArn:
     Type: String
     Default: ''
@@ -60,13 +43,6 @@ Globals:
         ARTICLES_TABLE_NAME: !Ref ArticlesTable
         MEDIA_BUCKET_NAME: !Ref MediaBucket
         COGNITO_USER_POOL_ID: !Ref CognitoUserPoolId
-        SITE_DOMAIN: !Sub 'https://${FrontendDomainName}'
-        SITE_NAME: Son Vani
-
-Conditions:
-  HasHostedZoneId: !Not [!Equals [!Ref HostedZoneId, '']]
-  HasArticleSocialPreviewEdgeArn:
-    !Not [!Equals [!Ref ArticleSocialPreviewOriginRequestLambdaVersionArn, '']]
 
 Resources:
   PublicApi:
@@ -186,6 +162,48 @@ Resources:
           Value: sonvani
         - Key: Environment
           Value: !Ref EnvironmentName
+  AdvertisementsTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      BillingMode: PAY_PER_REQUEST
+      SSESpecification:
+        SSEEnabled: true
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+
+      AttributeDefinitions:
+        - AttributeName: pk
+          AttributeType: S
+        - AttributeName: sk
+          AttributeType: S
+        - AttributeName: status
+          AttributeType: S
+        - AttributeName: createdAt
+          AttributeType: S
+
+      KeySchema:
+        - AttributeName: pk
+          KeyType: HASH
+        - AttributeName: sk
+          KeyType: RANGE
+
+      GlobalSecondaryIndexes:
+        - IndexName: GSI_ByStatus
+          KeySchema:
+            - AttributeName: status
+              KeyType: HASH
+            - AttributeName: createdAt
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+
+      Tags:
+        - Key: Application
+          Value: sonvani
+        - Key: Environment
+          Value: !Ref EnvironmentName
 
   MediaBucket:
     Type: AWS::S3::Bucket
@@ -233,167 +251,6 @@ Resources:
               - s3:GetObject
             Resource: !Sub '${MediaBucket.Arn}/*'
 
-  FrontendBucket:
-    Type: AWS::S3::Bucket
-    Properties:
-      BucketName: !Ref FrontendBucketName
-      BucketEncryption:
-        ServerSideEncryptionConfiguration:
-          - ServerSideEncryptionByDefault:
-              SSEAlgorithm: AES256
-      PublicAccessBlockConfiguration:
-        BlockPublicAcls: true
-        IgnorePublicAcls: true
-        BlockPublicPolicy: true
-        RestrictPublicBuckets: true
-      VersioningConfiguration:
-        Status: Enabled
-      Tags:
-        - Key: Application
-          Value: sonvani
-        - Key: Environment
-          Value: !Ref EnvironmentName
-
-  FrontendBucketPolicy:
-    Type: AWS::S3::BucketPolicy
-    Properties:
-      Bucket: !Ref FrontendBucket
-      PolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-          - Sid: AllowCloudFrontRead
-            Effect: Allow
-            Principal:
-              Service: cloudfront.amazonaws.com
-            Action:
-              - s3:GetObject
-            Resource: !Sub '${FrontendBucket.Arn}/*'
-            Condition:
-              StringEquals:
-                AWS:SourceArn: !Sub arn:aws:cloudfront::${AWS::AccountId}:distribution/${FrontendDistribution}
-
-  FrontendOriginAccessControl:
-    Type: AWS::CloudFront::OriginAccessControl
-    Properties:
-      OriginAccessControlConfig:
-        Name: !Sub '${AWS::StackName}-frontend-oac'
-        OriginAccessControlOriginType: s3
-        SigningBehavior: always
-        SigningProtocol: sigv4
-
-  FrontendDistribution:
-    Type: AWS::CloudFront::Distribution
-    Properties:
-      DistributionConfig:
-        Enabled: true
-        DefaultRootObject: index.html
-        HttpVersion: http2
-        PriceClass: PriceClass_100
-        Aliases:
-          - !Ref FrontendDomainName
-          - !Ref WwwFrontendDomainName
-        ViewerCertificate:
-          AcmCertificateArn: !Ref AcmCertificateArn
-          SslSupportMethod: sni-only
-          MinimumProtocolVersion: TLSv1.2_2021
-        DefaultCacheBehavior:
-          TargetOriginId: frontend-s3-origin
-          ViewerProtocolPolicy: redirect-to-https
-          AllowedMethods:
-            - GET
-            - HEAD
-            - OPTIONS
-          CachedMethods:
-            - GET
-            - HEAD
-          Compress: true
-          ForwardedValues:
-            QueryString: true
-            Cookies:
-              Forward: none
-        CacheBehaviors:
-          - PathPattern: /articles/*
-            TargetOriginId: frontend-s3-origin
-            ViewerProtocolPolicy: redirect-to-https
-            AllowedMethods:
-              - GET
-              - HEAD
-              - OPTIONS
-            CachedMethods:
-              - GET
-              - HEAD
-            Compress: true
-            CachePolicyId: 4135ea2d-6df8-44a3-9df3-4b5a84be39ad
-            LambdaFunctionAssociations: !If
-              - HasArticleSocialPreviewEdgeArn
-              - - EventType: origin-request
-                  IncludeBody: false
-                  LambdaFunctionARN: !Ref ArticleSocialPreviewOriginRequestLambdaVersionArn
-              - !Ref AWS::NoValue
-        CustomErrorResponses:
-          - ErrorCode: 403
-            ResponseCode: 200
-            ResponsePagePath: /index.html
-            ErrorCachingMinTTL: 0
-          - ErrorCode: 404
-            ResponseCode: 200
-            ResponsePagePath: /index.html
-            ErrorCachingMinTTL: 0
-        Origins:
-          - Id: frontend-s3-origin
-            DomainName: !GetAtt FrontendBucket.RegionalDomainName
-            OriginAccessControlId: !GetAtt FrontendOriginAccessControl.Id
-            S3OriginConfig:
-              OriginAccessIdentity: ''
-
-  FrontendARecord:
-    Type: AWS::Route53::RecordSet
-    Condition: HasHostedZoneId
-    Properties:
-      HostedZoneId: !Ref HostedZoneId
-      Name: !Ref FrontendDomainName
-      Type: A
-      AliasTarget:
-        DNSName: !GetAtt FrontendDistribution.DomainName
-        HostedZoneId: Z2FDTNDATAQYW2
-        EvaluateTargetHealth: false
-
-  FrontendRootAaaaRecord:
-    Type: AWS::Route53::RecordSet
-    Condition: HasHostedZoneId
-    Properties:
-      HostedZoneId: !Ref HostedZoneId
-      Name: !Ref FrontendDomainName
-      Type: AAAA
-      AliasTarget:
-        DNSName: !GetAtt FrontendDistribution.DomainName
-        HostedZoneId: Z2FDTNDATAQYW2
-        EvaluateTargetHealth: false
-
-  FrontendWwwARecord:
-    Type: AWS::Route53::RecordSet
-    Condition: HasHostedZoneId
-    Properties:
-      HostedZoneId: !Ref HostedZoneId
-      Name: !Ref WwwFrontendDomainName
-      Type: A
-      AliasTarget:
-        DNSName: !GetAtt FrontendDistribution.DomainName
-        HostedZoneId: Z2FDTNDATAQYW2
-        EvaluateTargetHealth: false
-
-  FrontendWwwAaaaRecord:
-    Type: AWS::Route53::RecordSet
-    Condition: HasHostedZoneId
-    Properties:
-      HostedZoneId: !Ref HostedZoneId
-      Name: !Ref WwwFrontendDomainName
-      Type: AAAA
-      AliasTarget:
-        DNSName: !GetAtt FrontendDistribution.DomainName
-        HostedZoneId: Z2FDTNDATAQYW2
-        EvaluateTargetHealth: false
-
   PublicReadFunctionRole:
     Type: AWS::IAM::Role
     Properties:
@@ -420,6 +277,13 @@ Resources:
                 Resource:
                   - !GetAtt ArticlesTable.Arn
                   - !Sub '${ArticlesTable.Arn}/index/*'
+              - Sid: ReadAdvertisementsTable
+                Effect: Allow
+                Action:
+                  - dynamodb:Query
+                Resource:
+                  - !GetAtt AdvertisementsTable.Arn
+                  - !Sub '${AdvertisementsTable.Arn}/index/*'
               - Sid: ReadMediaObjects
                 Effect: Allow
                 Action:
@@ -457,6 +321,13 @@ Resources:
                 Resource:
                   - !GetAtt ArticlesTable.Arn
                   - !Sub '${ArticlesTable.Arn}/index/*'
+              - Sid: WriteAdvertisements
+                Effect: Allow
+                Action:
+                  - dynamodb:PutItem
+                  - dynamodb:DeleteItem
+                Resource:
+                  - !GetAtt AdvertisementsTable.Arn
 
               - Sid: UploadMedia
                 Effect: Allow
@@ -701,6 +572,10 @@ Resources:
       Role: !GetAtt PublicReadFunctionRole.Arn
       Handler: src/functions/renderArticleSocialPreview/app.handler
       CodeUri: .
+      Environment:
+        Variables:
+          SITE_DOMAIN: https://sonvani.in
+          SITE_NAME: Son Vani
       Events:
         ApiEvent:
           Type: Api
@@ -1086,7 +961,87 @@ Resources:
         Minify: true
         Sourcemap: false
         Target: es2022
+  GetAdvertisementsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Role: !GetAtt PublicReadFunctionRole.Arn
+      Handler: src/functions/getAdvertisements/app.handler
+      CodeUri: .
+      Environment:
+        Variables:
+          ADVERTISEMENTS_TABLE_NAME: !Ref AdvertisementsTable
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref PublicApi
+            Path: /api/v1/ads/active
+            Method: GET
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        EntryPoints:
+          - src/functions/getAdvertisements/app.ts
+        Format: cjs
+        Minify: true
+        Sourcemap: false
+        Target: es2022
 
+  CreateAdvertisementFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Role: !GetAtt ArticleWriteFunctionRole.Arn
+      Handler: src/functions/createAdvertisements/app.handler
+      CodeUri: .
+      Environment:
+        Variables:
+          ADVERTISEMENTS_TABLE_NAME: !Ref AdvertisementsTable
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref PublicApi
+            Path: /api/v1/admin/ads
+            Method: POST
+            Auth:
+              Authorizer: CognitoAuthorizer
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        EntryPoints:
+          - src/functions/createAdvertisements/app.ts
+        Format: cjs
+        Minify: true
+        Sourcemap: false
+        Target: es2022
+
+  DeleteAdvertisementFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Role: !GetAtt ArticleWriteFunctionRole.Arn
+      Handler: src/functions/deleteAdvertisements/app.handler
+      CodeUri: .
+      Environment:
+        Variables:
+          ADVERTISEMENTS_TABLE_NAME: !Ref AdvertisementsTable
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref PublicApi
+            Path: /api/v1/admin/ads/{advertisementId}
+            Method: DELETE
+            Auth:
+              Authorizer: CognitoAuthorizer
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        EntryPoints:
+          - src/functions/deleteAdvertisements/app.ts
+        Format: cjs
+        Minify: true
+        Sourcemap: false
+        Target: es2022
 Outputs:
   PublicApiUrl:
     Description: Public API Gateway base URL.
@@ -1103,18 +1058,9 @@ Outputs:
   MediaBucketName:
     Description: S3 media bucket name.
     Value: !Ref MediaBucket
-  FrontendBucketName:
-    Description: S3 bucket used to host the React frontend.
-    Value: !Ref FrontendBucket
-  FrontendDistributionId:
-    Description: CloudFront distribution ID for the React frontend.
-    Value: !Ref FrontendDistribution
-  FrontendDistributionDomainName:
-    Description: CloudFront distribution domain name for DNS troubleshooting.
-    Value: !GetAtt FrontendDistribution.DomainName
-  FrontendDomainName:
-    Description: Primary frontend domain.
-    Value: !Ref FrontendDomainName
+  AdvertisementsTableName:
+    Description: DynamoDB table used for advertisements.
+    Value: !Ref AdvertisementsTable
   ArticleSocialPreviewOriginRequestLambdaVersionArn:
     Description: Lambda@Edge origin-request version ARN attached to /articles/* when configured.
     Value: !Ref ArticleSocialPreviewOriginRequestLambdaVersionArn
