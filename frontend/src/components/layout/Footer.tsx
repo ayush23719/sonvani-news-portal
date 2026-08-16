@@ -76,16 +76,74 @@ export function Footer() {
                 borderRadius: 1,
               }}
             />
-            <Typography
+            <Box
               sx={{
-                maxWidth: 380,
+                maxWidth: 400,
                 color: 'rgba(255,255,255,0.82)',
-                overflowWrap: 'anywhere',
               }}
             >
-              {brandConfig.tagline}. स्थानीय खबरों से लेकर देश-दुनिया तक, साफ और भरोसेमंद
-              हिंदी समाचार।
-            </Typography>
+              <Typography
+                sx={{
+                  mb: 1,
+                  fontWeight: 800,
+                  fontSize: '1rem',
+                  color: 'white',
+                }}
+              >
+                संपर्क कार्यालय
+              </Typography>
+
+              <Typography
+                sx={{
+                  fontSize: '0.9rem',
+                  lineHeight: 1.7,
+                  color: 'rgba(255,255,255,0.82)',
+                }}
+              >
+                वार्ड नं. 04, वीआईपी रोड, ओबरा
+                <br />
+                जनपद सोनभद्र, उत्तर प्रदेश – 231219
+              </Typography>
+
+              <Stack
+                spacing={0.35}
+                sx={{
+                  mt: 1.25,
+                  fontSize: '0.9rem',
+                }}
+              >
+                <Typography
+                  component="a"
+                  href="tel:+919140931961"
+                  sx={{
+                    color: 'rgba(255,255,255,0.82)',
+                    textDecoration: 'none',
+                    '&:hover': {
+                      color: 'white',
+                      textDecoration: 'underline',
+                    },
+                  }}
+                >
+                  📞 +91 91409 31961
+                </Typography>
+
+                <Typography
+                  component="a"
+                  href="mailto:sonevaninews@gmail.com"
+                  sx={{
+                    color: 'rgba(255,255,255,0.82)',
+                    textDecoration: 'none',
+                    overflowWrap: 'anywhere',
+                    '&:hover': {
+                      color: 'white',
+                      textDecoration: 'underline',
+                    },
+                  }}
+                >
+                  ✉️ sonevaninews@gmail.com
+                </Typography>
+              </Stack>
+            </Box>
             <Stack direction="row" spacing={1}>
               <IconButton
                 aria-label="फेसबुक"
