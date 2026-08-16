@@ -7,7 +7,7 @@ import {
   Stack,
   Typography,
 } from '@mui/material'
-import { Fragment, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { ArticleCard } from '@/components/article/ArticleCard'
@@ -361,13 +361,6 @@ export function ArticleDetailPage() {
   const paragraphs = article.body
     .split('\n')
     .filter((paragraph) => paragraph.trim() !== '')
-  const midArticleAdIndex =
-    paragraphs.length >= 4
-      ? Math.max(
-          1,
-          Math.min(paragraphs.length - 2, Math.floor(paragraphs.length / 2) - 1),
-        )
-      : -1
 
   return (
     <Container
@@ -526,8 +519,6 @@ export function ArticleDetailPage() {
               </IconButton>
             </Stack>
 
-            <AdvertisementSlot variant="banner" minHeight={90} />
-
             {article.images?.length > 0 && (
               <Box>
                 <Box
@@ -628,27 +619,21 @@ export function ArticleDetailPage() {
 
             <Box>
               {paragraphs.map((paragraph, index) => (
-                <Fragment key={index}>
-                  <Typography
-                    component="p"
-                    sx={{
-                      mb: 2.8,
-                      fontSize: {
-                        xs: '1rem',
-                        md: '1.08rem',
-                      },
-                      lineHeight: 2,
-                      textAlign: 'justify',
-                    }}
-                  >
-                    {paragraph}
-                  </Typography>
-                  {index === midArticleAdIndex ? (
-                    <Box sx={{ my: { xs: 3, md: 4 } }}>
-                      <AdvertisementSlot variant="banner" minHeight={90} />
-                    </Box>
-                  ) : null}
-                </Fragment>
+                <Typography
+                  key={index}
+                  component="p"
+                  sx={{
+                    mb: 2.8,
+                    fontSize: {
+                      xs: '1rem',
+                      md: '1.08rem',
+                    },
+                    lineHeight: 2,
+                    textAlign: 'justify',
+                  }}
+                >
+                  {paragraph}
+                </Typography>
               ))}
             </Box>
 
@@ -748,11 +733,12 @@ export function ArticleDetailPage() {
                 </Typography>
               </Box>
             )}
-
-            <AdvertisementSlot variant="banner" minHeight={96} />
           </Stack>
         </article>
       </Paper>
+      <Box sx={{ mt: { xs: 3, md: 4 } }}>
+        <AdvertisementSlot variant="banner" />
+      </Box>
       <RelatedArticlesSection
         error={relatedError}
         isLoading={isRelatedLoading}

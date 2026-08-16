@@ -14,8 +14,10 @@ export function AdvertisementSlot({
   minHeight,
   variant = 'box',
 }: AdvertisementSlotProps) {
-  const height =
+  const placeholderHeight =
     minHeight ?? (variant === 'banner' ? 96 : variant === 'sidebar' ? 280 : 220)
+  const maxImageHeight =
+    variant === 'sidebar' ? { xs: 520, md: 640 } : { xs: 420, sm: 520, md: 640 }
 
   const { data, isLoading } = useQuery({
     queryKey: ['advertisements'],
@@ -32,7 +34,7 @@ export function AdvertisementSlot({
         sx={{
           display: 'grid',
           width: '100%',
-          minHeight: height,
+          minHeight: placeholderHeight,
           placeItems: 'center',
           border: 1,
           borderStyle: 'dashed',
@@ -52,7 +54,7 @@ export function AdvertisementSlot({
         sx={{
           display: 'grid',
           width: '100%',
-          minHeight: height,
+          minHeight: placeholderHeight,
           placeItems: 'center',
           border: 1,
           borderStyle: 'dashed',
@@ -90,12 +92,15 @@ export function AdvertisementSlot({
       sx={{
         width: '100%',
         maxWidth: '100%',
-        minHeight: height,
         overflow: 'hidden',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        bgcolor: 'background.paper',
+        lineHeight: 0,
+        p: { xs: 1, sm: 1.5 },
+        bgcolor: 'grey.100',
+        border: 1,
+        borderColor: 'divider',
       }}
     >
       <Box
@@ -104,11 +109,11 @@ export function AdvertisementSlot({
         alt="विज्ञापन"
         sx={{
           display: 'block',
-          width: '100%',
-          height: '100%',
-          minHeight: height,
-          maxHeight: variant === 'sidebar' ? 400 : 500,
-          objectFit: variant === 'banner' ? 'cover' : 'contain',
+          width: 'auto',
+          height: 'auto',
+          maxWidth: '100%',
+          maxHeight: maxImageHeight,
+          objectFit: 'contain',
         }}
       />
     </Paper>
