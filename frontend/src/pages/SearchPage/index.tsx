@@ -2,6 +2,7 @@ import { Box, Button, Container, Paper, Stack, Typography } from '@mui/material'
 import { useSearchParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { ArticleList } from '@/components/article/ArticleList'
+import { AdvertisementSlot } from '@/components/common/AdvertisementSlot'
 import { searchArticles } from '@/services/searchService'
 
 export function SearchPage() {
@@ -47,16 +48,19 @@ export function SearchPage() {
         </Box>
 
         {data.length > 0 ? (
-          <Paper
-            elevation={0}
-            sx={{
-              border: 1,
-              borderColor: 'divider',
-              p: 3,
-            }}
-          >
-            <ArticleList items={data} />
-          </Paper>
+          <>
+            <AdvertisementSlot variant="banner" minHeight={90} />
+            <Paper
+              elevation={0}
+              sx={{
+                border: 1,
+                borderColor: 'divider',
+                p: 3,
+              }}
+            >
+              <ArticleList items={data} />
+            </Paper>
+          </>
         ) : (
           <Paper
             elevation={0}

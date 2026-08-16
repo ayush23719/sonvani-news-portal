@@ -7,12 +7,16 @@ import {
   Stack,
   Typography,
 } from '@mui/material'
-import { useEffect, useState } from 'react'
+import { Fragment, useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
+import { ArticleCard } from '@/components/article/ArticleCard'
+import { AdvertisementSlot } from '@/components/common/AdvertisementSlot'
+import { SectionHeader } from '@/components/common/SectionHeader'
 import { getJson } from '@/services/apiClient'
 import { env } from '@/config/env'
-import type { Article } from '@/types/news'
+import type { NewsItem } from '@/types/homepage'
+import type { Article, ArticleImage } from '@/types/news'
 import ShareIcon from '@mui/icons-material/Share'
 import WhatsAppIcon from '@mui/icons-material/WhatsApp'
 import FacebookIcon from '@mui/icons-material/Facebook'
@@ -30,6 +34,21 @@ type ApiResponse<TData> = {
   requestId: string
 }
 
+type ArticleSummary = Omit<Article, 'body'> & {
+  primaryImage?: ArticleImage
+  status?: string
+}
+
+type ArticleListingResponse = {
+  items: ArticleSummary[]
+}
+
+type HomeFeedApiData = {
+  latestArticles: ArticleListingResponse
+  featuredArticles: ArticleListingResponse
+  breakingNews: ArticleListingResponse
+}
+
 async function fetchArticleBySlug(slug: string): Promise<Article> {
   const response = await getJson<ApiResponse<Article>>(`/articles/${slug}`)
 
@@ -38,6 +57,115 @@ async function fetchArticleBySlug(slug: string): Promise<Article> {
   }
 
   return response.data
+}
+
+async function fetchCategoryArticles(categorySlug: string): Promise<ArticleSummary[]> {
+  const response = await getJson<ApiResponse<ArticleListingResponse>>(
+    `/categories/${encodeURIComponent(categorySlug)}/articles?limit=8`,
+  )
+
+  if (!response.success || !response.data) {
+    throw new Error(response.error?.message ?? 'संबंधित खबरें लोड नहीं हो सकीं।')
+  }
+
+  return response.data.items
+}
+
+async function fetchHomeArticles(): Promise<ArticleSummary[]> {
+  const response = await getJson<ApiResponse<HomeFeedApiData>>('/home')
+
+  if (!response.success || !response.data) {
+    throw new Error(response.error?.message ?? 'अन्य खबरें लोड नहीं हो सकीं।')
+  }
+
+  return [
+    ...response.data.featuredArticles.items,
+    ...response.data.breakingNews.items,
+    ...response.data.latestArticles.items,
+  ]
+}
+
+async function fetchRelatedArticles(article: Article): Promise<NewsItem[]> {
+  const related = new Map<string, ArticleSummary>()
+
+  if (article.categorySlug) {
+    const categoryArticles = await fetchCategoryArticles(article.categorySlug).catch(
+      () => [],
+    )
+    addRelatedArticles(related, categoryArticles, article)
+  }
+
+  if (related.size < 4) {
+    const homeArticles = await fetchHomeArticles().catch((error: unknown) => {
+      if (related.size > 0) {
+        return []
+      }
+
+      throw error
+    })
+
+    addRelatedArticles(related, homeArticles, article)
+  }
+
+  return [...related.values()].slice(0, 4).map(toRelatedNewsItem)
+}
+
+function addRelatedArticles(
+  related: Map<string, ArticleSummary>,
+  articles: ArticleSummary[],
+  currentArticle: Article,
+) {
+  for (const item of articles) {
+    if (related.size >= 4) {
+      return
+    }
+
+    if (
+      item.articleId === currentArticle.articleId ||
+      item.slug === currentArticle.slug
+    ) {
+      continue
+    }
+
+    if (!related.has(item.articleId)) {
+      related.set(item.articleId, item)
+    }
+  }
+}
+
+function toRelatedNewsItem(article: ArticleSummary, index: number): NewsItem {
+  const tones: NewsItem['imageTone'][] = ['navy', 'red', 'green', 'amber']
+
+  return {
+    id: article.articleId,
+    title: article.title,
+    summary: article.summary,
+    href: `/articles/${article.slug}`,
+    category: article.category,
+    categorySlug: article.categorySlug,
+    district: article.district,
+    districtSlug: article.districtSlug,
+    state: article.state,
+    publishedAt: formatPublishedTime(article.publishDate),
+    imageLabel: article.category,
+    imageTone: tones[index % tones.length],
+    imageUrl:
+      article.primaryImage?.url ??
+      article.images?.find((image) => image.isPrimary)?.url ??
+      article.images?.[0]?.url,
+    isBreaking: article.isBreaking,
+    isFeatured: article.isFeatured,
+  }
+}
+
+function formatPublishedTime(value: string): string {
+  return new Intl.DateTimeFormat('hi-IN', {
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+    day: 'numeric',
+    month: 'short',
+  }).format(new Date(value))
 }
 
 function extractYoutubeId(value?: string) {
@@ -71,6 +199,16 @@ export function ArticleDetailPage() {
     queryKey: ['article', slug],
     queryFn: () => fetchArticleBySlug(slug!),
     enabled: !!slug,
+  })
+  const {
+    data: relatedArticles = [],
+    error: relatedError,
+    isLoading: isRelatedLoading,
+  } = useQuery({
+    queryKey: ['related-articles', article?.articleId, article?.categorySlug],
+    queryFn: () => fetchRelatedArticles(article!),
+    enabled: Boolean(article),
+    staleTime: 5 * 60 * 1000,
   })
   const [snackbarOpen, setSnackbarOpen] = useState(false)
   const [snackbarMessage, setSnackbarMessage] = useState('')
@@ -220,6 +358,17 @@ export function ArticleDetailPage() {
     setSnackbarOpen(true)
   }
   const youtubeId = extractYoutubeId(article.youtubeVideoId)
+  const paragraphs = article.body
+    .split('\n')
+    .filter((paragraph) => paragraph.trim() !== '')
+  const midArticleAdIndex =
+    paragraphs.length >= 4
+      ? Math.max(
+          1,
+          Math.min(paragraphs.length - 2, Math.floor(paragraphs.length / 2) - 1),
+        )
+      : -1
+
   return (
     <Container
       maxWidth="lg"
@@ -376,6 +525,9 @@ export function ArticleDetailPage() {
                 <ShareIcon />
               </IconButton>
             </Stack>
+
+            <AdvertisementSlot variant="banner" minHeight={90} />
+
             {article.images?.length > 0 && (
               <Box>
                 <Box
@@ -475,12 +627,9 @@ export function ArticleDetailPage() {
             )}
 
             <Box>
-              {article.body
-                .split('\n')
-                .filter((paragraph) => paragraph.trim() !== '')
-                .map((paragraph, index) => (
+              {paragraphs.map((paragraph, index) => (
+                <Fragment key={index}>
                   <Typography
-                    key={index}
                     component="p"
                     sx={{
                       mb: 2.8,
@@ -494,7 +643,13 @@ export function ArticleDetailPage() {
                   >
                     {paragraph}
                   </Typography>
-                ))}
+                  {index === midArticleAdIndex ? (
+                    <Box sx={{ my: { xs: 3, md: 4 } }}>
+                      <AdvertisementSlot variant="banner" minHeight={90} />
+                    </Box>
+                  ) : null}
+                </Fragment>
+              ))}
             </Box>
 
             {article.images?.length > 1 && (
@@ -593,9 +748,16 @@ export function ArticleDetailPage() {
                 </Typography>
               </Box>
             )}
+
+            <AdvertisementSlot variant="banner" minHeight={96} />
           </Stack>
         </article>
       </Paper>
+      <RelatedArticlesSection
+        error={relatedError}
+        isLoading={isRelatedLoading}
+        items={relatedArticles}
+      />
       <Snackbar
         open={snackbarOpen}
         autoHideDuration={3000}
@@ -603,6 +765,71 @@ export function ArticleDetailPage() {
         message={snackbarMessage}
       />
     </Container>
+  )
+}
+
+function RelatedArticlesSection({
+  error,
+  isLoading,
+  items,
+}: {
+  error: unknown
+  isLoading: boolean
+  items: NewsItem[]
+}) {
+  return (
+    <Paper
+      elevation={0}
+      sx={{
+        mt: { xs: 3, md: 4 },
+        border: 1,
+        borderColor: 'divider',
+        p: { xs: 2, md: 3 },
+      }}
+    >
+      <SectionHeader title="यह खबरें भी पढ़ें" />
+
+      {isLoading ? (
+        <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center' }}>
+          <CircularProgress size={22} color="secondary" />
+          <Typography color="text.secondary" sx={{ fontWeight: 700 }}>
+            संबंधित खबरें लोड हो रही हैं...
+          </Typography>
+        </Stack>
+      ) : items.length > 0 ? (
+        <Box
+          sx={{
+            display: 'grid',
+            gap: 2,
+            gridAutoColumns: { xs: 'minmax(240px, 82vw)', sm: 'auto' },
+            gridAutoFlow: { xs: 'column', sm: 'row' },
+            gridTemplateColumns: {
+              sm: 'repeat(2, minmax(0, 1fr))',
+              md: 'repeat(4, minmax(0, 1fr))',
+            },
+            overflowX: { xs: 'auto', sm: 'visible' },
+            pb: { xs: 1, sm: 0 },
+            scrollSnapType: { xs: 'x proximity', sm: 'none' },
+            '& > *': {
+              minWidth: 0,
+              scrollSnapAlign: 'start',
+            },
+          }}
+        >
+          {items.map((item) => (
+            <Box key={item.id}>
+              <ArticleCard item={item} variant="compact" />
+            </Box>
+          ))}
+        </Box>
+      ) : (
+        <Typography color="text.secondary">
+          {error
+            ? 'संबंधित खबरें अभी लोड नहीं हो सकीं।'
+            : 'अभी अन्य खबरें उपलब्ध नहीं हैं।'}
+        </Typography>
+      )}
+    </Paper>
   )
 }
 

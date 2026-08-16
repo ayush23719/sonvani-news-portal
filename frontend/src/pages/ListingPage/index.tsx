@@ -11,6 +11,7 @@ import { useEffect, useMemo } from 'react'
 import { useParams, useSearchParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { ArticleList } from '@/components/article/ArticleList'
+import { AdvertisementSlot } from '@/components/common/AdvertisementSlot'
 import { getJson } from '@/services/apiClient'
 import type { ArticleImage, SeoMetadata } from '@/types/news'
 import type { NewsItem } from '@/types/homepage'
@@ -200,6 +201,7 @@ export function ListingPage({ kind, heading, emptyMessage }: ListingPageProps) {
             {items.length > 0 ? `${items.length} खबरें दिखाई गईं` : emptyMessage}
           </Typography>
         </Box>
+        {items.length > 0 ? <AdvertisementSlot variant="banner" minHeight={90} /> : null}
         {items.length > 0 ? (
           <Paper
             elevation={0}

@@ -5,9 +5,11 @@ import { logger } from '../../shared/logging/logger.js'
 import { errorResponse, successResponse } from '../../shared/responses/apiResponse.js'
 import { validateRequiredEnvironment } from '../../shared/validation/environment.js'
 import {
+  assertArticleSlugAvailable,
   getArticleRecordById,
   putArticleRecord,
   extractYoutubeVideoId,
+  normalizeArticleSlug,
 } from '../../shared/article/articleStore.js'
 
 export const handler: APIGatewayProxyHandler = async (event) => {
@@ -36,7 +38,11 @@ export const handler: APIGatewayProxyHandler = async (event) => {
     article.summary = typeof body.summary === 'string' ? body.summary : article.summary
     article.body = typeof body.body === 'string' ? body.body : article.body
 
-    article.slug = typeof body.slug === 'string' ? body.slug : article.slug
+    const originalSlug = article.slug
+
+    if (typeof body.slug === 'string' && body.slug.trim()) {
+      article.slug = normalizeArticleSlug(body.slug, article.title)
+    }
 
     if (typeof body.category === 'string') {
       article.category = body.category
@@ -82,6 +88,10 @@ export const handler: APIGatewayProxyHandler = async (event) => {
     }
 
     article.updatedAt = new Date().toISOString()
+
+    if (article.slug !== originalSlug) {
+      await assertArticleSlugAvailable(tableName, article.slug, article.articleId)
+    }
 
     await putArticleRecord(tableName, article)
 

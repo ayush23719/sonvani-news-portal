@@ -2,7 +2,9 @@ import { randomUUID } from 'node:crypto'
 import {
   DeleteCommand,
   PutCommand,
+  QueryCommand,
   ScanCommand,
+  type QueryCommandInput,
   type ScanCommandInput,
 } from '@aws-sdk/lib-dynamodb'
 import { dynamoDbDocumentClient } from '../clients/dynamodb.js'
@@ -63,7 +65,7 @@ export function normalizeArticleInput(
   const stateSlug =
     input.stateSlug?.trim() ||
     (state ? slugify(state) || encodeURIComponent(state) : undefined)
-  const slug = normalizeSlug(input.slug, title)
+  const slug = normalizeArticleSlug(input.slug, title)
   const images = normalizeImages(input.images)
   const now = new Date().toISOString()
 
@@ -123,6 +125,35 @@ export async function putArticleRecord(
       Item: record,
     }),
   )
+}
+
+export async function assertArticleSlugAvailable(
+  tableName: string,
+  slug: string,
+  currentArticleId?: string,
+): Promise<void> {
+  const commandInput: QueryCommandInput = {
+    TableName: tableName,
+    IndexName: 'GSI_BySlug',
+    KeyConditionExpression: 'slug = :slug',
+    ExpressionAttributeValues: {
+      ':slug': slug,
+    },
+  }
+
+  const result = await dynamoDbDocumentClient.send(new QueryCommand(commandInput))
+  const duplicate = ((result.Items ?? []) as ArticleTableRecord[]).find(
+    (item) => item.articleId !== currentArticleId,
+  )
+
+  if (duplicate) {
+    throw new AppError(
+      'VALIDATION_ERROR',
+      'यह क्लीन URL पहले से उपयोग में है। कृपया दूसरा slug चुनें।',
+      409,
+      { slug },
+    )
+  }
 }
 
 export async function getArticleRecordById(
@@ -245,11 +276,24 @@ function normalizeSeo(seo?: SeoMetadata): SeoMetadata | undefined {
   }
 }
 
-function normalizeSlug(slug: string | undefined, fallbackTitle: string): string {
+export function normalizeArticleSlug(
+  slug: string | undefined,
+  fallbackTitle: string,
+): string {
   const trimmedValue = slug?.trim()
 
   if (trimmedValue) {
-    return trimmedValue
+    const normalizedSlug = normalizeManualSlug(trimmedValue)
+
+    if (normalizedSlug) {
+      return normalizedSlug
+    }
+
+    throw new AppError(
+      'VALIDATION_ERROR',
+      'Slug must contain English letters, numbers, or hyphens.',
+      400,
+    )
   }
 
   const generatedSlug = slugify(fallbackTitle)
@@ -259,6 +303,16 @@ function normalizeSlug(slug: string | undefined, fallbackTitle: string): string 
   }
 
   return randomUUID()
+}
+
+function normalizeManualSlug(value: string): string {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, '-')
+    .replace(/[^a-z0-9-]/g, '')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '')
 }
 
 function slugify(value: string): string {

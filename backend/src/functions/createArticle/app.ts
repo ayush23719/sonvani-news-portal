@@ -5,6 +5,7 @@ import { logger } from '../../shared/logging/logger.js'
 import { errorResponse, successResponse } from '../../shared/responses/apiResponse.js'
 import { validateRequiredEnvironment } from '../../shared/validation/environment.js'
 import {
+  assertArticleSlugAvailable,
   buildArticleRecord,
   putArticleRecord,
 } from '../../shared/article/articleStore.js'
@@ -32,6 +33,11 @@ export const handler: APIGatewayProxyHandler = async (event) => {
       { createdBy, status: 'DRAFT' },
     )
     console.log('ARTICLE RECORD:', JSON.stringify(articleRecord, null, 2))
+    await assertArticleSlugAvailable(
+      tableName,
+      articleRecord.slug,
+      articleRecord.articleId,
+    )
     await putArticleRecord(tableName, articleRecord)
 
     logger.info('Article created', {

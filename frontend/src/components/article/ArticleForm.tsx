@@ -45,6 +45,7 @@ type ArticleImage = {
 
 type ArticleFormData = {
   title: string
+  slug: string
   summary: string
   body: string
   reporterName: string
@@ -65,6 +66,7 @@ type ArticleFormData = {
 
 const emptyForm: ArticleFormData = {
   title: '',
+  slug: '',
   summary: '',
   body: '',
   reporterName: '',
@@ -94,6 +96,19 @@ const ARTICLE_CATEGORIES = [
   'बिजनेस',
   'वीडियो',
 ]
+
+function sanitizeSlugInput(value: string): string {
+  return value
+    .toLowerCase()
+    .replace(/\s+/g, '-')
+    .replace(/[^a-z0-9-]/g, '')
+    .replace(/-+/g, '-')
+    .replace(/^-+/g, '')
+}
+
+function normalizeSlugForPayload(value: string): string {
+  return sanitizeSlugInput(value).replace(/-+$/g, '')
+}
 
 export function ArticleForm({ mode, articleId }: ArticleFormProps) {
   const [form, setForm] = useState<ArticleFormData>(emptyForm)
@@ -127,6 +142,7 @@ export function ArticleForm({ mode, articleId }: ArticleFormProps) {
           data: {
             article: {
               title?: string
+              slug?: string
               summary?: string
               body?: string
               reporterName?: string
@@ -155,6 +171,7 @@ export function ArticleForm({ mode, articleId }: ArticleFormProps) {
 
         setForm({
           title: article.title ?? '',
+          slug: sanitizeSlugInput(article.slug ?? ''),
           summary: article.summary ?? '',
           body: article.body ?? '',
           reporterName: article.reporterName ?? '',
@@ -201,6 +218,15 @@ export function ArticleForm({ mode, articleId }: ArticleFormProps) {
       }))
     }
 
+  const updateSlug = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const value = sanitizeSlugInput(event.target.value)
+
+    setForm((previous) => ({
+      ...previous,
+      slug: value,
+    }))
+  }
+
   const updateCheckbox =
     (field: keyof ArticleFormData) => (event: React.ChangeEvent<HTMLInputElement>) => {
       setForm((previous) => ({
@@ -217,6 +243,7 @@ export function ArticleForm({ mode, articleId }: ArticleFormProps) {
     try {
       const payload = {
         title: form.title,
+        slug: normalizeSlugForPayload(form.slug),
         summary: form.summary,
         body: form.body,
         reporterName: form.reporterName,
@@ -270,6 +297,7 @@ export function ArticleForm({ mode, articleId }: ArticleFormProps) {
       setSuccess('')
       const payload = {
         title: form.title,
+        slug: normalizeSlugForPayload(form.slug),
         summary: form.summary,
         body: form.body,
         reporterName: form.reporterName,
@@ -369,6 +397,21 @@ export function ArticleForm({ mode, articleId }: ArticleFormProps) {
               label="शीर्षक"
               value={form.title}
               onChange={update('title')}
+            />
+
+            <TextField
+              fullWidth
+              label="क्लीन URL (Slug)"
+              value={form.slug}
+              onBlur={() =>
+                setForm((previous) => ({
+                  ...previous,
+                  slug: normalizeSlugForPayload(previous.slug),
+                }))
+              }
+              onChange={updateSlug}
+              helperText='हिंग्लिश/English में छोटा URL लिखें, जैसे "lucknow-mein-barish-se-badha-khatra". खाली छोड़ने पर पुराना ऑटो slug बनेगा।'
+              placeholder="lucknow-mein-barish-se-badha-khatra"
             />
 
             <TextField
